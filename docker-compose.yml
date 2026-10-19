@@ -1,0 +1,9 @@
+# Valfritt: kör SQL Server i Docker om du inte har det installerat lokalt.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "TrAInr_Dev123!"
+    ports:
+      - "1433:1433"
