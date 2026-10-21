@@ -16,9 +16,31 @@ Träningsapp där du loggar dina pass och får hjälp av AI (Claude) med:
 | Databas | SQL Server (hanteras i SSMS) | migreringar i `backend/TrAInr.Api/Data/Migrations`, SQL-skript i `database/TrAInr.sql` |
 | AI | Claude via det officiella Anthropic-paketet för .NET | `backend/TrAInr.Api/Services/TrainerAi.cs` |
 
-## Kom igång
+## Kör allt i Docker (enklast)
 
-Du behöver .NET 10 SDK, Node.js 20+ och SQL Server (t.ex. SQL Server Express/Developer eller `docker compose up -d`).
+Du behöver bara [Docker Desktop](https://www.docker.com/products/docker-desktop/). Stå i mappen där `docker-compose.yml` ligger och kör:
+
+```bash
+docker compose up -d --build
+```
+
+Det startar tre containrar:
+
+| Container | Adress | Innehåll |
+|---|---|---|
+| `frontend` | http://localhost:8080 | React-appen (öppna den här i webbläsaren) |
+| `api` | http://localhost:5028 | .NET-API:t, skapar databastabellerna automatiskt vid start |
+| `sqlserver` | `localhost,1433` | SQL Server 2022, användare `sa`, lösenord `TrAInr_Dev123!` |
+
+Datan sparas i Docker-volymen `sqldata`, så den finns kvar mellan omstarter. Anslut med SSMS till `localhost,1433` med SQL Server Authentication och kryssa i "Trust server certificate".
+
+För AI-funktionerna: kopiera `.env.example` till `.env`, fyll i din `ANTHROPIC_API_KEY` och kör `docker compose up -d` igen. `.env` checkas aldrig in i git.
+
+Stoppa med `docker compose down` (lägg till `-v` om du även vill radera databasen).
+
+## Kom igång utan Docker
+
+Du behöver .NET 10 SDK, Node.js 20+ och SQL Server (t.ex. SQL Server Express/Developer, eller bara databasen i Docker med `docker compose up -d sqlserver`).
 
 ### 1. Databasen
 
@@ -27,7 +49,7 @@ Standardanslutningen i `backend/TrAInr.Api/appsettings.json` är `Server=localho
 Databasen och tabellerna skapas automatiskt när backenden startar i utvecklingsläge. Vill du hellre skapa dem själv kan du antingen:
 
 - öppna `database/TrAInr.sql` i SSMS och köra det, eller
-- köra `dotnet ef database update` i `backend/TrAInr.Api` (kräver `dotnet tool install --global dotnet-ef`).
+- köra `dotnet ef database update --project backend/TrAInr.Api` från roten (kräver `dotnet tool install --global dotnet-ef`).
 
 Tabeller: `Profiles`, `Workouts`, `Exercises` och EF:s `__EFMigrationsHistory`.
 
