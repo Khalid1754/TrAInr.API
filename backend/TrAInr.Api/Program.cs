@@ -8,7 +8,7 @@ using TrAInr.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<TrainrDbContext>(o =>
-    o.UseSqlServer(builder.Configuration.GetConnectionString("Trainr")));
+    o.UseSqlServer(builder.Configuration.GetConnectionString("Trainr"), sql => sql.EnableRetryOnFailure()));
 builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
 builder.Services.AddSingleton<TrainerAi>();
 builder.Services.AddControllers()
@@ -38,9 +38,11 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
 }));
 
 if (app.Environment.IsDevelopment())
-{
     app.MapOpenApi();
-    // Skapar/uppdaterar databasen automatiskt under utveckling.
+
+// Skapar/uppdaterar databasen automatiskt under utveckling och i Docker.
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<TrainrDbContext>().Database.Migrate();
 }
