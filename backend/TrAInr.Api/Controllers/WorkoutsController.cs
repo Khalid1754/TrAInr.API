@@ -10,10 +10,11 @@ namespace TrAInr.Api.Controllers;
 
 [ApiController]
 [Route("api")]
-public class WorkoutsController(TrainrDbContext db, TrainerAi ai) : ControllerBase
+public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus dbStatus) : ControllerBase
 {
     [HttpGet("status")]
-    public object Status() => new { ai = ai.Enabled, provider = ai.ProviderName };
+    public async Task<object> Status() =>
+        new { ai = ai.Enabled, provider = ai.ProviderName, database = await dbStatus.CheckAsync(db) };
 
     [HttpGet("workouts")]
     public async Task<IEnumerable<WorkoutDto>> List()

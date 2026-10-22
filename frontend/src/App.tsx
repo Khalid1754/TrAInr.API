@@ -18,6 +18,7 @@ type Tab = (typeof tabs)[number]['id']
 export default function App() {
   const [tab, setTab] = useState<Tab>('log')
   const [aiEnabled, setAiEnabled] = useState(true)
+  const [dbError, setDbError] = useState<string | null>(null)
   const [auth, setAuth] = useState<{ loginRequired: boolean; loggedIn: boolean } | null>(null)
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (auth?.loggedIn) api.status().then((s) => setAiEnabled(s.ai)).catch(() => setAiEnabled(false))
+    if (auth?.loggedIn) api.status().then((s) => { setAiEnabled(s.ai); setDbError(s.database) }).catch(() => setAiEnabled(false))
   }, [auth?.loggedIn])
 
   async function logout() {
@@ -52,6 +53,11 @@ export default function App() {
           {auth.loginRequired && <button onClick={logout}>Logga ut</button>}
         </nav>
       </header>
+      {dbError && (
+        <div className="banner">
+          Appen når inte databasen: <code>{dbError}</code>
+        </div>
+      )}
       {!aiEnabled && (
         <div className="banner">
           AI är avstängt. Sätt <code>GROQ_API_KEY</code> eller <code>GEMINI_API_KEY</code> (gratis) eller <code>ANTHROPIC_API_KEY</code> och starta om backenden för att använda AI-funktionerna.
