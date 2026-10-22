@@ -50,6 +50,14 @@ Stoppa med `docker compose down` (lägg till `-v` om du även vill radera databa
 
 Datorn måste vara igång och appen startad för att mobilen ska nå den.
 
+## Appen i molnet (utan datorn)
+
+Vill du nå appen var du än är, även när datorn är avstängd, kan den ligga gratis i Azure med SQL Server-databas och lösenordsskydd. Följ steg-för-steg-guiden i [MOLNET.md](MOLNET.md).
+
+## Inloggning
+
+Sätt `Auth:Password` (`Auth__Password` som miljövariabel, `APP_PASSWORD` i `.env` för Docker) så måste man logga in med det lösenordet. Är den tom behövs ingen inloggning, vilket passar när appen bara körs hemma. Inloggningen gäller ett år, och byter du lösenord loggas alla gamla inloggningar ut.
+
 ## AI-nyckel
 
 Appen fungerar med tre AI-leverantörer:
@@ -118,6 +126,8 @@ dotnet test TrAInr.slnx
 
 | Metod | Sökväg | |
 |---|---|---|
+| GET | `/api/auth/me` | Om inloggning krävs och om du är inloggad |
+| POST | `/api/auth/login` / `/api/auth/logout` | Logga in (`{ "password": "..." }`) / ut |
 | GET/PUT | `/api/profile` | Läs/uppdatera profil |
 | GET/POST | `/api/workouts` | Lista/skapa pass |
 | GET/PUT/DELETE | `/api/workouts/{id}` | Hämta/ändra/ta bort pass |
@@ -130,6 +140,6 @@ OpenAPI-beskrivningen finns på `/openapi/v1.json` i utvecklingsläge.
 
 ## Nästa steg
 
-- Inloggning och flera användare (idag finns en profil med Id 1)
+- Flera användare (idag finns ett lösenord och en profil med Id 1)
 - Grafer över progression per övning
 - Rådet är allmänt och ersätter inte medicinsk rådgivning

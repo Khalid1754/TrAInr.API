@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { api } from './api'
+import { api, setUnauthorizedHandler } from './api'
+import Login from './components/Login'
 import LogWorkout from './components/LogWorkout'
 import History from './components/History'
 import Plan from './components/Plan'
@@ -17,10 +18,24 @@ type Tab = (typeof tabs)[number]['id']
 export default function App() {
   const [tab, setTab] = useState<Tab>('log')
   const [aiEnabled, setAiEnabled] = useState(true)
+  const [auth, setAuth] = useState<{ loginRequired: boolean; loggedIn: boolean } | null>(null)
 
   useEffect(() => {
-    api.status().then((s) => setAiEnabled(s.ai)).catch(() => setAiEnabled(false))
+    setUnauthorizedHandler(() => setAuth({ loginRequired: true, loggedIn: false }))
+    api.me().then(setAuth).catch(() => setAuth({ loginRequired: false, loggedIn: true }))
   }, [])
+
+  useEffect(() => {
+    if (auth?.loggedIn) api.status().then((s) => setAiEnabled(s.ai)).catch(() => setAiEnabled(false))
+  }, [auth?.loggedIn])
+
+  async function logout() {
+    await api.logout()
+    setAuth({ loginRequired: true, loggedIn: false })
+  }
+
+  if (!auth) return null
+  if (!auth.loggedIn) return <Login onLoggedIn={() => setAuth({ loginRequired: true, loggedIn: true })} />
 
   return (
     <>
@@ -34,6 +49,7 @@ export default function App() {
               {t.label}
             </button>
           ))}
+          {auth.loginRequired && <button onClick={logout}>Logga ut</button>}
         </nav>
       </header>
       {!aiEnabled && (
