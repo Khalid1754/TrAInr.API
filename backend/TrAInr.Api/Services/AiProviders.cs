@@ -69,6 +69,10 @@ public class GeminiProvider(IConfiguration config, HttpClient http) : IAiProvide
     {
         var model = config["Gemini:Model"] ?? "gemini-3.6-flash";
         var baseUrl = (config["Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com").TrimEnd('/');
+        // Hur mycket modellen "tänker" innan den svarar. Standard för Flash är medium, vilket är
+        // långsamt; minimal/low räcker gott för de här uppgifterna och svarar mycket snabbare.
+        var thinkingLevel = ClaudeProvider.FirstNonEmpty(config["Gemini:ThinkingLevel"])
+            ?? (effort == AiEffort.Medium ? "low" : "minimal");
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v1beta/models/{model}:generateContent")
         {
@@ -81,6 +85,7 @@ public class GeminiProvider(IConfiguration config, HttpClient http) : IAiProvide
                 {
                     responseMimeType = "application/json",
                     responseJsonSchema = schema,
+                    thinkingConfig = new { thinkingLevel },
                 },
             }), System.Text.Encoding.UTF8, "application/json"),
         };
@@ -115,6 +120,77 @@ public class GeminiProvider(IConfiguration config, HttpClient http) : IAiProvide
         var text = string.Concat(parts.Select(p => p?["text"]?.GetValue<string>() ?? ""));
         if (text.Length == 0)
             throw new AiProviderException($"Gemini gav inget svar (finishReason: {finishReason ?? "okänd"}).");
+        return text;
+    }
+
+    private static string ErrorMessage(string body)
+    {
+        try { return JsonNode.Parse(body)?["error"]?["message"]?.GetValue<string>() ?? body; }
+        catch (JsonException) { return body; }
+    }
+}
+
+// Groq via det OpenAI-kompatibla REST-API:t. Mycket snabbt och har en gratisnivå:
+// skapa nyckel på https://console.groq.com/keys
+public class GroqProvider(IConfiguration config, HttpClient http) : IAiProvider
+{
+    private readonly string? _apiKey = ClaudeProvider.FirstNonEmpty(config["Groq:ApiKey"], Environment.GetEnvironmentVariable("GROQ_API_KEY"));
+
+    public string Name => "Groq";
+    public bool Enabled => _apiKey is not null;
+
+    public async Task<string> GenerateJsonAsync(string system, string prompt, Dictionary<string, JsonElement> schema, AiEffort effort)
+    {
+        var baseUrl = (config["Groq:BaseUrl"] ?? "https://api.groq.com").TrimEnd('/');
+        var reasoningEffort = ClaudeProvider.FirstNonEmpty(config["Groq:ReasoningEffort"])
+            ?? (effort == AiEffort.Medium ? "medium" : "low");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/openai/v1/chat/completions")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(new
+            {
+                model = config["Groq:Model"] ?? "openai/gpt-oss-120b",
+                messages = new[]
+                {
+                    new { role = "system", content = system },
+                    new { role = "user", content = prompt },
+                },
+                reasoning_effort = reasoningEffort,
+                response_format = new
+                {
+                    type = "json_schema",
+                    json_schema = new { name = "svar", strict = true, schema },
+                },
+            }), System.Text.Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+
+        HttpResponseMessage response;
+        string body;
+        try
+        {
+            response = await http.SendAsync(request);
+            body = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
+        {
+            throw new AiProviderException("Kunde inte nå Groq. Kontrollera internetanslutningen och försök igen.");
+        }
+        using var _ = response;
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiProviderException(response.StatusCode switch
+            {
+                HttpStatusCode.TooManyRequests => "Groq: gratiskvoten är slut för stunden, försök igen om en minut.",
+                HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "Ogiltig GROQ_API_KEY.",
+                _ => $"Groq-fel ({(int)response.StatusCode}): {ErrorMessage(body)}",
+            });
+        }
+
+        var choice = JsonNode.Parse(body)?["choices"]?[0];
+        var text = choice?["message"]?["content"]?.GetValue<string>() ?? "";
+        if (text.Length == 0)
+            throw new AiProviderException($"Groq gav inget svar (finish_reason: {choice?["finish_reason"]?.GetValue<string>() ?? "okänd"}).");
         return text;
     }
 

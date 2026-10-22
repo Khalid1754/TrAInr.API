@@ -42,6 +42,7 @@ public class GeminiProviderTests
         Assert.Equal("application/json", body["generationConfig"]!["responseMimeType"]!.GetValue<string>());
         Assert.NotNull(body["generationConfig"]!["responseJsonSchema"]!["properties"]!["proteinG"]);
         Assert.Equal("system", body["systemInstruction"]!["parts"]![0]!["text"]!.GetValue<string>());
+        Assert.Equal("minimal", body["generationConfig"]!["thinkingConfig"]!["thinkingLevel"]!.GetValue<string>());
     }
 
     [Fact]
