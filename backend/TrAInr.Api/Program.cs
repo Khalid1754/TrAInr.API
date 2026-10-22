@@ -20,6 +20,7 @@ builder.Services.AddSingleton<IAiProvider>(sp => sp.GetRequiredService<GroqProvi
 builder.Services.AddHttpClient<GeminiProvider>(c => c.Timeout = TimeSpan.FromMinutes(3));
 builder.Services.AddSingleton<IAiProvider>(sp => sp.GetRequiredService<GeminiProvider>());
 builder.Services.AddSingleton<TrainerAi>();
+builder.Services.AddSingleton<DatabaseStatus>();
 builder.Services.AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 builder.Services.AddOpenApi();
@@ -83,20 +84,12 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
-// Skapar/uppdaterar databasen automatiskt under utveckling och i Docker.
-if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+// Skapar/uppdaterar databasen vid start (under utveckling och när Database:MigrateOnStartup är satt).
+// Kraschar inte om databasen inte går att nå, då skulle appen startas om i en loop.
 {
-    // Kraschar inte om databasen inte går att nå, då skulle appen startas om i en loop.
-    // Felet syns i loggen och anropen svarar "Databasen svarar inte" tills det är löst.
-    try
-    {
-        using var scope = app.Services.CreateScope();
-        scope.ServiceProvider.GetRequiredService<TrainrDbContext>().Database.Migrate();
-    }
-    catch (Exception e)
-    {
-        app.Logger.LogError(e, "Kunde inte nå databasen vid start. Kontrollera ConnectionStrings__Trainr och SQL-serverns brandvägg.");
-    }
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<TrainrDbContext>();
+    await app.Services.GetRequiredService<DatabaseStatus>().CheckAsync(db);
 }
 
 // I molnet ligger den byggda React-appen i wwwroot och serveras av API:t. I Docker sköter nginx det.
