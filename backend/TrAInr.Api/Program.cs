@@ -3,7 +3,9 @@ using Anthropic.Exceptions;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using TrAInr.Api.Controllers;
 using TrAInr.Api.Data;
 using TrAInr.Api.Services;
@@ -70,6 +72,8 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         AnthropicRateLimitException => (502, "AI:n är överbelastad just nu, försök igen om en stund."),
         AnthropicApiException e => (502, $"AI-fel: {e.Message}"),
         AiProviderException e => (502, e.Message),
+        SqlException or RetryLimitExceededException =>
+            (503, "Databasen svarar inte just nu. Vänta en minut och försök igen."),
         _ => (500, "Något gick fel på servern."),
     };
     context.Response.StatusCode = status;
@@ -82,8 +86,17 @@ if (app.Environment.IsDevelopment())
 // Skapar/uppdaterar databasen automatiskt under utveckling och i Docker.
 if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 {
-    using var scope = app.Services.CreateScope();
-    scope.ServiceProvider.GetRequiredService<TrainrDbContext>().Database.Migrate();
+    // Kraschar inte om databasen inte går att nå, då skulle appen startas om i en loop.
+    // Felet syns i loggen och anropen svarar "Databasen svarar inte" tills det är löst.
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<TrainrDbContext>().Database.Migrate();
+    }
+    catch (Exception e)
+    {
+        app.Logger.LogError(e, "Kunde inte nå databasen vid start. Kontrollera ConnectionStrings__Trainr och SQL-serverns brandvägg.");
+    }
 }
 
 // I molnet ligger den byggda React-appen i wwwroot och serveras av API:t. I Docker sköter nginx det.
