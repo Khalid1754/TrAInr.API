@@ -23,10 +23,16 @@ exit /b 1
 
 :vanta_app
 echo Vantar pa att appen ska svara...
+set forsok=0
 :vanta_igen
 timeout /t 2 /nobreak >nul
-curl -sf -o nul http://localhost:8080/api/workouts/status
-if errorlevel 1 goto vanta_igen
+curl -sf -o nul http://localhost:8080/api/status
+if not errorlevel 1 goto oppna
+set /a forsok+=1
+rem Ge upp efter ca 2 minuter och oppna appen anda.
+if %forsok% lss 60 goto vanta_igen
+
+:oppna
 
 start "" http://localhost:8080
 echo TrAInr kor pa http://localhost:8080
