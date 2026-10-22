@@ -9,7 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<TrainrDbContext>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("Trainr"), sql => sql.EnableRetryOnFailure()));
-builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
+builder.Services.AddSingleton<IAiProvider, ClaudeProvider>();
+builder.Services.AddHttpClient<GeminiProvider>(c => c.Timeout = TimeSpan.FromMinutes(3));
+builder.Services.AddSingleton<IAiProvider>(sp => sp.GetRequiredService<GeminiProvider>());
 builder.Services.AddSingleton<TrainerAi>();
 builder.Services.AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
@@ -30,7 +32,7 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         AnthropicUnauthorizedException => (502, "Ogiltig ANTHROPIC_API_KEY."),
         AnthropicRateLimitException => (502, "AI:n är överbelastad just nu, försök igen om en stund."),
         AnthropicApiException e => (502, $"AI-fel: {e.Message}"),
-        InvalidOperationException e => (502, e.Message),
+        AiProviderException e => (502, e.Message),
         _ => (500, "Något gick fel på servern."),
     };
     context.Response.StatusCode = status;

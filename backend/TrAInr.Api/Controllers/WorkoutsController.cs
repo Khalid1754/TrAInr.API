@@ -13,7 +13,7 @@ namespace TrAInr.Api.Controllers;
 public class WorkoutsController(TrainrDbContext db, TrainerAi ai) : ControllerBase
 {
     [HttpGet("status")]
-    public object Status() => new { ai = ai.Enabled };
+    public object Status() => new { ai = ai.Enabled, provider = ai.ProviderName };
 
     [HttpGet("workouts")]
     public async Task<IEnumerable<WorkoutDto>> List()

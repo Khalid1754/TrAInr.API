@@ -4,20 +4,13 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
-using Anthropic;
-using Anthropic.Models.Messages;
 using TrAInr.Api.Models;
 
 namespace TrAInr.Api.Services;
 
-public class AiOptions
-{
-    public string Model { get; set; } = "claude-opus-5-5";
-}
-
 public class AiUnavailableException(string message) : Exception(message);
 
-public class TrainerAi(IConfiguration config, Microsoft.Extensions.Options.IOptions<AiOptions> options)
+public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers)
 {
     private const string SystemPrompt = """
         Du är TrAInr, en kunnig och peppande personlig tränare och kostrådgivare.
@@ -32,16 +25,14 @@ public class TrainerAi(IConfiguration config, Microsoft.Extensions.Options.IOpti
         TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver(),
     };
 
-    private readonly string? _apiKey = config["Anthropic:ApiKey"] ?? Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
-    private AnthropicClient? _client;
+    // Ai:Provider väljer leverantör ("claude" eller "gemini"). Utan inställning används
+    // den första som har en nyckel: Claude, annars Gemini.
+    private readonly IAiProvider? _provider = config["Ai:Provider"] is { Length: > 0 } name
+        ? providers.FirstOrDefault(p => p.Enabled && p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+        : providers.FirstOrDefault(p => p.Enabled);
 
-    public bool Enabled => !string.IsNullOrWhiteSpace(_apiKey);
-
-    private AnthropicClient Client => _client ??= new AnthropicClient
-    {
-        ApiKey = _apiKey!,
-        BaseUrl = config["Anthropic:BaseUrl"] ?? "https://api.anthropic.com",
-    };
+    public bool Enabled => _provider is not null;
+    public string? ProviderName => _provider?.Name;
 
     public Task<PlanResult> SuggestPlanAsync(UserProfile profile, IEnumerable<Workout> history, string? wishes)
     {
@@ -55,7 +46,7 @@ public class TrainerAi(IConfiguration config, Microsoft.Extensions.Options.IOpti
             {(string.IsNullOrWhiteSpace(wishes) ? "" : $"Användarens önskemål: {wishes}\n")}
             Ta fram det bästa veckoschemat för användaren med exakt {profile.DaysPerWeek} träningsdagar.
             Bygg vidare på övningar användaren redan gör och föreslå vikter utifrån historiken.
-            """, Effort.Medium);
+            """, AiEffort.Medium);
     }
 
     public Task<CaloriesResult> EstimateCaloriesAsync(UserProfile profile, Workout workout, WorkoutEstimate baseline)
@@ -70,7 +61,7 @@ public class TrainerAi(IConfiguration config, Microsoft.Extensions.Options.IOpti
 
             Gör en mer träffsäker uppskattning av hur många kalorier användaren förbränt på passet, utifrån
             övningstyp, vikt, reps, set och kroppsvikt. Ange ett rimligt intervall.
-            """, Effort.Low);
+            """, AiEffort.Low);
     }
 
     public Task<MealResult> SuggestMealAsync(UserProfile profile, Workout workout, int caloriesBurned) =>
@@ -82,30 +73,14 @@ public class TrainerAi(IConfiguration config, Microsoft.Extensions.Options.IOpti
 
             Föreslå den ideala återhämtningsmåltiden efter detta pass för bästa möjliga återhämtning,
             anpassad efter användarens mål, kroppsvikt och kostpreferenser. Använd ingredienser som är lätta att hitta i en svensk matbutik.
-            """, Effort.Low);
+            """, AiEffort.Low);
 
-    private async Task<T> AskAsync<T>(string prompt, Effort effort)
+    private async Task<T> AskAsync<T>(string prompt, AiEffort effort)
     {
-        if (!Enabled)
-            throw new AiUnavailableException("AI är inte aktiverat. Sätt ANTHROPIC_API_KEY och starta om servern.");
+        if (_provider is null)
+            throw new AiUnavailableException("AI är inte aktiverat. Sätt GEMINI_API_KEY (gratis) eller ANTHROPIC_API_KEY och starta om servern.");
 
-        var response = await Client.Messages.Create(new MessageCreateParams
-        {
-            Model = options.Value.Model,
-            MaxTokens = 16000,
-            System = SystemPrompt,
-            OutputConfig = new OutputConfig
-            {
-                Effort = effort,
-                Format = new JsonOutputFormat { Schema = SchemaFor<T>() },
-            },
-            Messages = [new() { Role = Role.User, Content = prompt }],
-        });
-
-        if (response.StopReason == StopReason.Refusal)
-            throw new InvalidOperationException("AI:n avböjde att svara på den här frågan.");
-
-        var text = string.Concat(response.Content.Select(b => b.Value).OfType<TextBlock>().Select(t => t.Text));
+        var text = await _provider.GenerateJsonAsync(SystemPrompt, prompt, SchemaFor<T>(), effort);
         try
         {
             return JsonSerializer.Deserialize<T>(text, Json)
@@ -113,7 +88,7 @@ public class TrainerAi(IConfiguration config, Microsoft.Extensions.Options.IOpti
         }
         catch (JsonException)
         {
-            throw new InvalidOperationException($"AI-svaret kunde inte tolkas (stop_reason: {response.StopReason}).");
+            throw new AiProviderException($"AI-svaret från {_provider.Name} kunde inte tolkas.");
         }
     }
 
