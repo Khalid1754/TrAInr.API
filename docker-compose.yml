@@ -1,9 +1,10 @@
 # Startar hela TrAInr: SQL Server, .NET-API:t och React-frontenden.
-#   docker compose up -d --build
+#   docker compose up -d --build   (eller dubbelklicka på start.bat i Windows)
 # Appen: http://localhost:8080  ·  SQL Server (för SSMS): localhost,1433 med användare sa
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "${SA_PASSWORD:-TrAInr_Dev123!}"
@@ -20,6 +21,7 @@ services:
 
   api:
     build: ./backend/TrAInr.Api
+    restart: unless-stopped
     environment:
       ConnectionStrings__Trainr: "Server=sqlserver,1433;Database=TrAInr;User Id=sa;Password=${SA_PASSWORD:-TrAInr_Dev123!};TrustServerCertificate=True"
       Database__MigrateOnStartup: "true"
@@ -38,6 +40,7 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
       - "8080:80"
     depends_on:
