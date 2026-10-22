@@ -36,4 +36,13 @@ if %forsok% lss 60 goto vanta_igen
 
 start "" http://localhost:8080
 echo TrAInr kor pa http://localhost:8080
-timeout /t 3 >nul
+
+rem Datorns adress pa wifi, sa att appen kan oppnas fran mobilen pa samma natverk.
+set ip=
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq 'Up' } | Select-Object -First 1).IPv4Address.IPAddress"`) do set ip=%%i
+if defined ip (
+    echo.
+    echo Pa mobilen ^(samma wifi^): http://%ip%:8080
+)
+echo.
+pause

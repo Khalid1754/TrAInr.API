@@ -42,6 +42,14 @@ För AI-funktionerna: kopiera `.env.example` till `.env`, fyll i en nyckel (se [
 
 Stoppa med `docker compose down` (lägg till `-v` om du även vill radera databasen).
 
+## Appen på iPhone (samma wifi)
+
+1. Dubbelklicka på `mobil-atkomst.bat` en gång och godkänn frågan om administratörsbehörighet. Den öppnar port 8080 i Windows-brandväggen för privata nätverk. Wifi-nätverket måste vara satt som **Privat** i Windows.
+2. Starta appen med `start.bat`. Fönstret visar adressen för mobilen, till exempel `http://192.168.1.23:8080`.
+3. Öppna adressen i Safari på iPhonen, tryck på dela-knappen och välj **Lägg till på hemskärmen**. Då får du en TrAInr-ikon som öppnar appen i helskärm.
+
+Datorn måste vara igång och appen startad för att mobilen ska nå den.
+
 ## AI-nyckel
 
 Appen fungerar med tre AI-leverantörer:
