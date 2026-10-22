@@ -14,7 +14,7 @@ Träningsapp där du loggar dina pass och får hjälp av AI (Claude) med:
 | Tester | xUnit | `backend/TrAInr.Api.Tests` |
 | Frontend | React 19, TypeScript, Vite | `frontend` |
 | Databas | SQL Server (hanteras i SSMS) | migreringar i `backend/TrAInr.Api/Data/Migrations`, SQL-skript i `database/TrAInr.sql` |
-| AI | Claude via det officiella Anthropic-paketet för .NET | `backend/TrAInr.Api/Services/TrainerAi.cs` |
+| AI | Google Gemini (gratis) eller Claude via det officiella Anthropic-paketet | `backend/TrAInr.Api/Services/TrainerAi.cs`, `AiProviders.cs` |
 
 ## Kör allt i Docker (enklast)
 
@@ -34,9 +34,22 @@ Det startar tre containrar:
 
 Datan sparas i Docker-volymen `sqldata`, så den finns kvar mellan omstarter. Anslut med SSMS till `localhost,1433` med SQL Server Authentication och kryssa i "Trust server certificate".
 
-För AI-funktionerna: kopiera `.env.example` till `.env`, fyll i din `ANTHROPIC_API_KEY` och kör `docker compose up -d` igen. `.env` checkas aldrig in i git.
+För AI-funktionerna: kopiera `.env.example` till `.env`, fyll i en nyckel (se [AI-nyckel](#ai-nyckel)) och kör `docker compose up -d` igen. `.env` checkas aldrig in i git.
 
 Stoppa med `docker compose down` (lägg till `-v` om du även vill radera databasen).
+
+## AI-nyckel
+
+Appen fungerar med två AI-leverantörer:
+
+| Leverantör | Kostnad | Nyckel | Variabel |
+|---|---|---|---|
+| Google Gemini (`gemini-3.6-flash`) | Gratisnivå med begränsat antal anrop per minut och dag | https://aistudio.google.com/apikey | `GEMINI_API_KEY` |
+| Anthropic Claude (`claude-opus-5-5`) | Betalt, kräver krediter | https://console.anthropic.com | `ANTHROPIC_API_KEY` |
+
+Finns båda nycklarna används Claude. Sätt `AI_PROVIDER=gemini` (eller `Ai:Provider` i `appsettings.json`) för att välja själv. Modellen för Gemini ändras med `Gemini:Model`.
+
+Utan Docker sätter du nyckeln med `dotnet user-secrets set "Gemini:ApiKey" "..."` i `backend/TrAInr.Api`.
 
 ## Kom igång utan Docker
 
@@ -57,11 +70,11 @@ Tabeller: `Profiles`, `Workouts`, `Exercises` och EF:s `__EFMigrationsHistory`.
 
 ```bash
 cd backend/TrAInr.Api
-dotnet user-secrets set "Anthropic:ApiKey" "sk-ant-..."   # skapa nyckeln på console.anthropic.com
+dotnet user-secrets set "Gemini:ApiKey" "..."   # gratis nyckel, se AI-nyckel ovan
 dotnet run --launch-profile http
 ```
 
-API:t körs på http://localhost:5028. Nyckeln kan också sättas med miljövariabeln `ANTHROPIC_API_KEY`. Utan nyckel fungerar loggning, historik och den regelbaserade kaloriuppskattningen; AI-knapparna visar då ett meddelande om att AI är avstängt.
+API:t körs på http://localhost:5028. Nyckeln kan också sättas med miljövariabeln `GEMINI_API_KEY` (eller `ANTHROPIC_API_KEY` för Claude). Utan nyckel fungerar loggning, historik och den regelbaserade kaloriuppskattningen; AI-knapparna visar då ett meddelande om att AI är avstängt.
 
 ### 3. Frontend
 
@@ -82,7 +95,7 @@ dotnet test TrAInr.slnx
 ## Hur det fungerar
 
 - **Kalorier i två steg.** `CalorieEstimator` räknar direkt med MET-metoden (kcal = MET × kroppsvikt × tid, där tiden räknas fram ur set, reps och vila, och tung vikt relativt kroppsvikten höjer intensiteten). Den visas medan du loggar. AI:n kan sedan förfina den med intervall och efterförbränning.
-- **Strukturerade AI-svar.** Varje AI-funktion har en C#-typ (`Services/AiModels.cs`) som görs om till ett JSON-schema. Claude måste svara enligt schemat, så svaren går alltid att visa i gränssnittet.
+- **Strukturerade AI-svar.** Varje AI-funktion har en C#-typ (`Services/AiModels.cs`) som görs om till ett JSON-schema. AI:n måste svara enligt schemat, så svaren går alltid att visa i gränssnittet.
 - **AI-svaren sparas** på passet i databasen så att de finns kvar i historiken. Ändras passet rensas de.
 - **Modell:** `claude-opus-5-5` som standard, ändras under `Ai:Model` i `appsettings.json` (t.ex. `claude-sonnet-5-5` eller `claude-haiku-5-5` för lägre kostnad).
 

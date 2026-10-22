@@ -23,7 +23,9 @@ services:
     environment:
       ConnectionStrings__Trainr: "Server=sqlserver,1433;Database=TrAInr;User Id=sa;Password=${SA_PASSWORD:-TrAInr_Dev123!};TrustServerCertificate=True"
       Database__MigrateOnStartup: "true"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      Ai__Provider: "${AI_PROVIDER:-}"
     ports:
       - "5028:8080"
     depends_on:

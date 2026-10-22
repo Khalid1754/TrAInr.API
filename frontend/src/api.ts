@@ -97,7 +97,7 @@ async function request<T>(path: string, init: { method?: string; body?: unknown 
 }
 
 export const api = {
-  status: () => request<{ ai: boolean }>('/api/status'),
+  status: () => request<{ ai: boolean; provider: string | null }>('/api/status'),
   getProfile: () => request<Profile>('/api/profile'),
   saveProfile: (p: Profile) => request<Profile>('/api/profile', { method: 'PUT', body: p }),
   listWorkouts: () => request<Workout[]>('/api/workouts'),
