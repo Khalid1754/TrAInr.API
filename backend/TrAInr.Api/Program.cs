@@ -1,7 +1,10 @@
 using System.Text.Json.Serialization;
 using Anthropic.Exceptions;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using TrAInr.Api.Controllers;
 using TrAInr.Api.Data;
 using TrAInr.Api.Services;
 
@@ -18,6 +21,38 @@ builder.Services.AddSingleton<TrainerAi>();
 builder.Services.AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 builder.Services.AddOpenApi();
+
+// Inloggning med ett lösenord. Kakan gäller ett år så att mobilen förblir inloggad.
+builder.Services.AddSingleton<AppPassword>();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(o =>
+{
+    o.Cookie.Name = "trainr";
+    o.Cookie.HttpOnly = true;
+    o.Cookie.SameSite = SameSiteMode.Strict;
+    o.ExpireTimeSpan = TimeSpan.FromDays(365);
+    o.SlidingExpiration = true;
+    o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
+    o.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = 403; return Task.CompletedTask; };
+    o.Events.OnValidatePrincipal = ctx =>
+    {
+        var password = ctx.HttpContext.RequestServices.GetRequiredService<AppPassword>();
+        if (ctx.Principal?.FindFirst(AuthController.FingerprintClaim)?.Value != password.Fingerprint)
+            ctx.RejectPrincipal();
+        return Task.CompletedTask;
+    };
+});
+builder.Services.AddAuthorization();
+// Högst fem inloggningsförsök per minut, så att ingen kan gissa lösenordet.
+builder.Services.AddRateLimiter(o =>
+{
+    o.AddFixedWindowLimiter("login", l => { l.PermitLimit = 5; l.Window = TimeSpan.FromMinutes(1); });
+    o.OnRejected = (ctx, token) =>
+    {
+        ctx.HttpContext.Response.StatusCode = 429;
+        return new ValueTask(ctx.HttpContext.Response.WriteAsJsonAsync(
+            new { error = "För många försök. Vänta en minut och försök igen." }, token));
+    };
+});
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:5173"])
      .AllowAnyHeader().AllowAnyMethod()));
@@ -51,7 +86,17 @@ if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Databas
     scope.ServiceProvider.GetRequiredService<TrainrDbContext>().Database.Migrate();
 }
 
+// I molnet ligger den byggda React-appen i wwwroot och serveras av API:t. I Docker sköter nginx det.
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors();
-app.MapControllers();
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+
+var controllers = app.MapControllers();
+if (app.Services.GetRequiredService<AppPassword>().Required)
+    controllers.RequireAuthorization();
+app.MapFallbackToFile("index.html");
 
 app.Run();

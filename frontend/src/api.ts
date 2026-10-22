@@ -80,12 +80,19 @@ export interface Profile {
   dietaryPreferences: string
 }
 
+// App.tsx visar inloggningen igen om servern svarar 401 (t.ex. om lösenordet har bytts).
+let onUnauthorized = () => {}
+export function setUnauthorizedHandler(handler: () => void) {
+  onUnauthorized = handler
+}
+
 async function request<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
   const res = await fetch(path, {
     method: init.method ?? 'GET',
     headers: { 'Content-Type': 'application/json' },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
   })
+  if (res.status === 401 && !path.startsWith('/api/auth/')) onUnauthorized()
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -97,6 +104,9 @@ async function request<T>(path: string, init: { method?: string; body?: unknown 
 }
 
 export const api = {
+  me: () => request<{ loginRequired: boolean; loggedIn: boolean }>('/api/auth/me'),
+  login: (password: string) => request<void>('/api/auth/login', { method: 'POST', body: { password } }),
+  logout: () => request<void>('/api/auth/logout', { method: 'POST' }),
   status: () => request<{ ai: boolean; provider: string | null }>('/api/status'),
   getProfile: () => request<Profile>('/api/profile'),
   saveProfile: (p: Profile) => request<Profile>('/api/profile', { method: 'PUT', body: p }),
