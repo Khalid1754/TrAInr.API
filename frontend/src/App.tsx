@@ -38,7 +38,7 @@ export default function App() {
       </header>
       {!aiEnabled && (
         <div className="banner">
-          AI är avstängt. Sätt <code>GEMINI_API_KEY</code> (gratis) eller <code>ANTHROPIC_API_KEY</code> och starta om backenden för att använda AI-funktionerna.
+          AI är avstängt. Sätt <code>GROQ_API_KEY</code> eller <code>GEMINI_API_KEY</code> (gratis) eller <code>ANTHROPIC_API_KEY</code> och starta om backenden för att använda AI-funktionerna.
           Loggning och grundläggande kaloriuppskattning fungerar ändå.
         </div>
       )}

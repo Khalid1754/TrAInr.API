@@ -25,8 +25,8 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
         TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver(),
     };
 
-    // Ai:Provider väljer leverantör ("claude" eller "gemini"). Utan inställning används
-    // den första som har en nyckel: Claude, annars Gemini.
+    // Ai:Provider väljer leverantör ("claude", "groq" eller "gemini"). Utan inställning används
+    // den första som har en nyckel, i ordningen Claude, Groq, Gemini.
     private readonly IAiProvider? _provider = config["Ai:Provider"] is { Length: > 0 } name
         ? providers.FirstOrDefault(p => p.Enabled && p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
         : providers.FirstOrDefault(p => p.Enabled);

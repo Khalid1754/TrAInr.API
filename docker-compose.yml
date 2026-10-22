@@ -23,6 +23,8 @@ services:
     environment:
       ConnectionStrings__Trainr: "Server=sqlserver,1433;Database=TrAInr;User Id=sa;Password=${SA_PASSWORD:-TrAInr_Dev123!};TrustServerCertificate=True"
       Database__MigrateOnStartup: "true"
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      Groq__Model: "${GROQ_MODEL:-openai/gpt-oss-120b}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       Gemini__Model: "${GEMINI_MODEL:-gemini-3.6-flash}"
       Gemini__ThinkingLevel: "${GEMINI_THINKING_LEVEL:-}"

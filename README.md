@@ -14,7 +14,7 @@ Träningsapp där du loggar dina pass och får hjälp av AI (Claude) med:
 | Tester | xUnit | `backend/TrAInr.Api.Tests` |
 | Frontend | React 19, TypeScript, Vite | `frontend` |
 | Databas | SQL Server (hanteras i SSMS) | migreringar i `backend/TrAInr.Api/Data/Migrations`, SQL-skript i `database/TrAInr.sql` |
-| AI | Google Gemini (gratis) eller Claude via det officiella Anthropic-paketet | `backend/TrAInr.Api/Services/TrainerAi.cs`, `AiProviders.cs` |
+| AI | Groq eller Google Gemini (gratis) eller Claude via det officiella Anthropic-paketet | `backend/TrAInr.Api/Services/TrainerAi.cs`, `AiProviders.cs` |
 
 ## Kör allt i Docker (enklast)
 
@@ -40,14 +40,15 @@ Stoppa med `docker compose down` (lägg till `-v` om du även vill radera databa
 
 ## AI-nyckel
 
-Appen fungerar med två AI-leverantörer:
+Appen fungerar med tre AI-leverantörer:
 
 | Leverantör | Kostnad | Nyckel | Variabel |
 |---|---|---|---|
+| Groq (`openai/gpt-oss-120b`) | Gratisnivå, mycket snabba svar | https://console.groq.com/keys | `GROQ_API_KEY` |
 | Google Gemini (`gemini-3.6-flash`) | Gratisnivå med begränsat antal anrop per minut och dag | https://aistudio.google.com/apikey | `GEMINI_API_KEY` |
 | Anthropic Claude (`claude-opus-5-5`) | Betalt, kräver krediter | https://console.anthropic.com | `ANTHROPIC_API_KEY` |
 
-Finns båda nycklarna används Claude. Sätt `AI_PROVIDER=gemini` (eller `Ai:Provider` i `appsettings.json`) för att välja själv. Modellen för Gemini ändras med `Gemini:Model` (`GEMINI_MODEL` i Docker).
+Finns flera nycklar används den första i ordningen Claude, Groq, Gemini. Sätt `AI_PROVIDER=groq` eller `AI_PROVIDER=gemini` (eller `Ai:Provider` i `appsettings.json`) för att välja själv. Modellen ändras med `Groq:Model` (`GROQ_MODEL` i Docker) respektive `Gemini:Model` (`GEMINI_MODEL`).
 
 **Snabbare svar med Gemini:** appen ber Gemini tänka så lite som möjligt (`minimal` för kalorier och måltid, `low` för veckoschemat), vilket ger kortare svarstider än modellens standard. Vill du ha ännu snabbare svar, sätt `GEMINI_MODEL=gemini-3.5-flash-lite` i `.env`. Vill du ha mer genomtänkta svar, sätt `GEMINI_THINKING_LEVEL=medium` eller `high`.
 

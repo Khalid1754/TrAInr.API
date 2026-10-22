@@ -10,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<TrainrDbContext>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("Trainr"), sql => sql.EnableRetryOnFailure()));
 builder.Services.AddSingleton<IAiProvider, ClaudeProvider>();
+builder.Services.AddHttpClient<GroqProvider>(c => c.Timeout = TimeSpan.FromMinutes(3));
+builder.Services.AddSingleton<IAiProvider>(sp => sp.GetRequiredService<GroqProvider>());
 builder.Services.AddHttpClient<GeminiProvider>(c => c.Timeout = TimeSpan.FromMinutes(3));
 builder.Services.AddSingleton<IAiProvider>(sp => sp.GetRequiredService<GeminiProvider>());
 builder.Services.AddSingleton<TrainerAi>();
