@@ -69,6 +69,10 @@ public class GeminiProvider(IConfiguration config, HttpClient http) : IAiProvide
     {
         var model = config["Gemini:Model"] ?? "gemini-3.6-flash";
         var baseUrl = (config["Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com").TrimEnd('/');
+        // Hur mycket modellen "tänker" innan den svarar. Standard för Flash är medium, vilket är
+        // långsamt; minimal/low räcker gott för de här uppgifterna och svarar mycket snabbare.
+        var thinkingLevel = ClaudeProvider.FirstNonEmpty(config["Gemini:ThinkingLevel"])
+            ?? (effort == AiEffort.Medium ? "low" : "minimal");
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v1beta/models/{model}:generateContent")
         {
@@ -81,6 +85,7 @@ public class GeminiProvider(IConfiguration config, HttpClient http) : IAiProvide
                 {
                     responseMimeType = "application/json",
                     responseJsonSchema = schema,
+                    thinkingConfig = new { thinkingLevel },
                 },
             }), System.Text.Encoding.UTF8, "application/json"),
         };

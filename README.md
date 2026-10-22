@@ -47,7 +47,9 @@ Appen fungerar med två AI-leverantörer:
 | Google Gemini (`gemini-3.6-flash`) | Gratisnivå med begränsat antal anrop per minut och dag | https://aistudio.google.com/apikey | `GEMINI_API_KEY` |
 | Anthropic Claude (`claude-opus-5-5`) | Betalt, kräver krediter | https://console.anthropic.com | `ANTHROPIC_API_KEY` |
 
-Finns båda nycklarna används Claude. Sätt `AI_PROVIDER=gemini` (eller `Ai:Provider` i `appsettings.json`) för att välja själv. Modellen för Gemini ändras med `Gemini:Model`.
+Finns båda nycklarna används Claude. Sätt `AI_PROVIDER=gemini` (eller `Ai:Provider` i `appsettings.json`) för att välja själv. Modellen för Gemini ändras med `Gemini:Model` (`GEMINI_MODEL` i Docker).
+
+**Snabbare svar med Gemini:** appen ber Gemini tänka så lite som möjligt (`minimal` för kalorier och måltid, `low` för veckoschemat), vilket ger kortare svarstider än modellens standard. Vill du ha ännu snabbare svar, sätt `GEMINI_MODEL=gemini-3.5-flash-lite` i `.env`. Vill du ha mer genomtänkta svar, sätt `GEMINI_THINKING_LEVEL=medium` eller `high`.
 
 Utan Docker sätter du nyckeln med `dotnet user-secrets set "Gemini:ApiKey" "..."` i `backend/TrAInr.Api`.
 
