@@ -18,7 +18,11 @@ Träningsapp där du loggar dina pass och får hjälp av AI (Claude) med:
 
 ## Kör allt i Docker (enklast)
 
-Du behöver bara [Docker Desktop](https://www.docker.com/products/docker-desktop/). Stå i mappen där `docker-compose.yml` ligger och kör:
+Du behöver bara [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+**Enklast i Windows:** dubbelklicka på `start.bat`. Den startar Docker Desktop om det behövs, bygger och startar appen och öppnar http://localhost:8080. Dubbelklicka på `stopp.bat` för att stänga av. Containrarna har `restart: unless-stopped`, så har du startat appen en gång kommer den upp av sig själv när Docker Desktop startar, tills du stoppar den.
+
+Från terminalen står du i mappen där `docker-compose.yml` ligger och kör:
 
 ```bash
 docker compose up -d --build
