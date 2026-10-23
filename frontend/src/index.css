@@ -59,3 +59,26 @@ ul.compact { margin: 4px 0; padding-left: 20px; }
 .login h1 { text-align: center; margin-bottom: 16px; }
 .login h2 { margin-top: 0; }
 button.link, button.link:hover { background: none; color: var(--accent); padding: 0; font-weight: 600; text-decoration: underline; }
+
+/* Statistik och diagram. En serie per diagram i appens gröna färg. */
+.chart { position: relative; margin-top: 8px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.chart .grid { stroke: var(--border); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 12px; }
+.chart .bar { fill: var(--accent); opacity: .85; }
+.chart .bar.active { opacity: 1; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .line-area { fill: var(--accent); opacity: .1; }
+.chart .dot { fill: var(--accent); stroke: var(--card); stroke-width: 2; }
+.chart .crosshair { stroke: var(--muted); stroke-width: 1; }
+.chart-tip { position: absolute; top: 0; transform: translateX(-50%); pointer-events: none; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 8px rgb(0 0 0 / .12); }
+.chart-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.chart-controls select { width: auto; flex: 1 1 160px; }
+.segmented { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
+.segmented button { background: none; color: var(--muted); padding: 6px 10px; font-weight: 500; }
+.segmented button.active { background: var(--card); color: var(--text); font-weight: 600; }
+.card.stats { margin: 0 0 12px; justify-content: space-around; }
+table.records { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.records th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 500; }
+table.records td, table.records th { border-bottom: 1px solid var(--border); padding: 6px 4px; }
+.segmented button:hover:not(.active) { background: none; color: var(--text); }

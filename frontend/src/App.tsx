@@ -4,11 +4,13 @@ import Login from './components/Login'
 import LogWorkout from './components/LogWorkout'
 import History from './components/History'
 import Plan from './components/Plan'
+import Stats from './components/Stats'
 import ProfileForm from './components/ProfileForm'
 
 const tabs = [
   { id: 'log', label: 'Logga pass' },
   { id: 'history', label: 'Historik' },
+  { id: 'stats', label: 'Statistik' },
   { id: 'plan', label: 'AI-schema' },
   { id: 'profile', label: 'Profil' },
 ] as const
@@ -71,6 +73,7 @@ export default function App() {
       <main>
         {tab === 'log' && <LogWorkout onSaved={() => setTab('history')} />}
         {tab === 'history' && <History />}
+        {tab === 'stats' && <Stats />}
         {tab === 'plan' && <Plan />}
         {tab === 'profile' && <ProfileForm email={auth.email} />}
       </main>

@@ -80,6 +80,27 @@ export interface Profile {
   dietaryPreferences: string
 }
 
+export interface ExercisePoint {
+  date: string
+  topWeightKg: number
+  repsAtTop: number
+  estimated1RmKg: number
+  volumeKg: number
+}
+
+export interface Stats {
+  summary: { workouts: number; workoutsLast30Days: number; weekStreak: number; totalVolumeKg: number; totalKcal: number }
+  weeks: { weekStart: string; workouts: number; volumeKg: number; kcal: number }[]
+  exercises: {
+    name: string
+    sessions: number
+    bestWeightKg: number
+    bestWeightDate: string | null
+    bestEstimated1RmKg: number
+    history: ExercisePoint[]
+  }[]
+}
+
 export interface Me {
   loggedIn: boolean
   email: string | null
@@ -118,6 +139,7 @@ export const api = {
   status: () => request<{ ai: boolean; provider: string | null; database: string | null }>('/api/status'),
   getProfile: () => request<Profile>('/api/profile'),
   saveProfile: (p: Profile) => request<Profile>('/api/profile', { method: 'PUT', body: p }),
+  stats: () => request<Stats>('/api/stats'),
   listWorkouts: () => request<Workout[]>('/api/workouts'),
   createWorkout: (w: WorkoutInput) => request<Workout>('/api/workouts', { method: 'POST', body: w }),
   deleteWorkout: (id: number) => request<void>(`/api/workouts/${id}`, { method: 'DELETE' }),

@@ -136,6 +136,7 @@ dotnet test TrAInr.slnx
 | GET/PUT | `/api/profile` | Läs/uppdatera profil |
 | GET/POST | `/api/workouts` | Lista/skapa pass |
 | GET/PUT/DELETE | `/api/workouts/{id}` | Hämta/ändra/ta bort pass |
+| GET | `/api/stats` | Statistik: veckovolym, kalorier per vecka, utveckling och personbästa per övning (`?weeks=12`) |
 | POST | `/api/estimate` | Snabb kaloriuppskattning för ett osparat pass |
 | POST | `/api/ai/plan` | AI-veckoschema (`{ "wishes": "..." }`) |
 | POST | `/api/workouts/{id}/ai/calories` | AI-kaloriuppskattning |
@@ -145,5 +146,4 @@ OpenAPI-beskrivningen finns på `/openapi/v1.json` i utvecklingsläge.
 
 ## Nästa steg
 
-- Grafer över progression per övning
 - Rådet är allmänt och ersätter inte medicinsk rådgivning
