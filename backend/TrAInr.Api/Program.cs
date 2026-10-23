@@ -51,7 +51,11 @@ builder.Services.AddRateLimiter(o =>
 {
     o.AddPolicy("login", ctx => RateLimitPartition.GetFixedWindowLimiter(
         ctx.Connection.RemoteIpAddress?.ToString() ?? "",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = builder.Configuration.GetValue("Auth:LoginAttemptsPerMinute", 5),
+            Window = TimeSpan.FromMinutes(1),
+        }));
     o.OnRejected = (ctx, token) =>
     {
         ctx.HttpContext.Response.StatusCode = 429;
@@ -107,3 +111,6 @@ app.MapControllers().RequireAuthorization();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+// Gör Program synlig för integrationstesterna (WebApplicationFactory).
+public partial class Program;

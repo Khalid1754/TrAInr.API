@@ -9,8 +9,9 @@ export interface ChartPoint {
   tooltip: ReactNode
 }
 
+import { niceTicks, PAD, showLabel } from './chartMath'
+
 const H = 200
-const PAD = { top: 16, right: 16, bottom: 28, left: 44 }
 const innerH = H - PAD.top - PAD.bottom
 
 // Diagrammet ritas i skärmens verkliga bredd så att texten alltid är lika stor, även på mobilen.
@@ -27,28 +28,7 @@ function useWidth() {
   return { ref, width, innerW: width - PAD.left - PAD.right }
 }
 
-// Runda skalsteg (0, 250, 500 …) så att axeln blir lätt att läsa.
-function niceTicks(min: number, max: number, count = 4) {
-  if (max === min) max = min + 1
-  const raw = (max - min) / count
-  const mag = 10 ** Math.floor(Math.log10(raw))
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw)!
-  const lo = Math.floor(min / step) * step
-  const hi = Math.ceil(max / step) * step
-  const ticks = []
-  for (let t = lo; t <= hi + step / 2; t += step) ticks.push(t)
-  return ticks
-}
-
 const compact = (n: number) => (Math.abs(n) >= 1000 ? `${+(n / 1000).toFixed(1)}k` : `${+n.toFixed(1)}`)
-
-// Visar bara var n:te etikett när de inte får plats (ungefär en per 56 pixlar).
-function showLabel(i: number, total: number, width: number) {
-  const fits = Math.max(2, Math.floor((width - PAD.left - PAD.right) / 56))
-  if (total <= fits) return true
-  const every = Math.ceil(total / fits)
-  return (total - 1 - i) % every === 0
-}
 
 function Frame({ chartRef, width: W, ticks, y, points, x, children, active, label }: {
   chartRef: RefObject<HTMLDivElement | null>

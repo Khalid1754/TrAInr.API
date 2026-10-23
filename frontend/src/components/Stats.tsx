@@ -1,17 +1,10 @@
 import { useEffect, useState } from 'react'
 import { api, type Stats as StatsData } from '../api'
 import { BarChart, LineChart } from './Charts'
+import { weekNumber } from './format'
 
 const kg = (n: number) => `${n.toLocaleString('sv-SE')} kg`
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'numeric' })
-
-// Veckonummer enligt ISO 8601, som i svenska kalendrar.
-function weekNumber(iso: string) {
-  const d = new Date(iso)
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
-  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1)
-  return Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7)
-}
 
 export default function Stats() {
   const [stats, setStats] = useState<StatsData | null>(null)
