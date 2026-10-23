@@ -1,10 +1,14 @@
 import type { CaloriesResult, MealResult } from '../api'
+import { useLang } from '../i18n'
 
 export function CaloriesBox({ c }: { c: CaloriesResult }) {
+  const { t } = useLang()
   return (
     <div className="ai-box">
       <h4>
-        🔥 AI: ca {c.totalKcal} kcal ({c.rangeLowKcal}–{c.rangeHighKcal}) + {c.afterburnKcal} kcal efterförbränning
+        {t('🔥 AI: ca {kcal} kcal ({low}–{high}) + {after} kcal efterförbränning', {
+          kcal: c.totalKcal, low: c.rangeLowKcal, high: c.rangeHighKcal, after: c.afterburnKcal,
+        })}
       </h4>
       <ul className="compact">
         {c.exercises.map((e) => (
@@ -17,22 +21,25 @@ export function CaloriesBox({ c }: { c: CaloriesResult }) {
 }
 
 export function MealBox({ m }: { m: MealResult }) {
+  const { t } = useLang()
   return (
     <div className="ai-box">
       <h4>🥗 {m.title}</h4>
       <p>{m.why}</p>
       <p className="meta">
-        {m.timing} · {m.macros.kcal} kcal · protein {m.macros.proteinG} g · kolhydrater {m.macros.carbsG} g · fett {m.macros.fatG} g
+        {m.timing} · {t('{kcal} kcal · protein {protein} g · kolhydrater {carbs} g · fett {fat} g', {
+          kcal: m.macros.kcal, protein: m.macros.proteinG, carbs: m.macros.carbsG, fat: m.macros.fatG,
+        })}
       </p>
-      <b>Ingredienser</b>
+      <b>{t('Ingredienser')}</b>
       <ul className="compact">
         {m.ingredients.map((i) => <li key={i.item}>{i.amount} {i.item}</li>)}
       </ul>
-      <b>Gör så här</b>
+      <b>{t('Gör så här')}</b>
       <ol className="compact">
         {m.steps.map((s, i) => <li key={i}>{s}</li>)}
       </ol>
-      <b>Snabba alternativ</b>
+      <b>{t('Snabba alternativ')}</b>
       <ul className="compact">
         {m.alternatives.map((a, i) => <li key={i}>{a}</li>)}
       </ul>

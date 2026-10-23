@@ -124,7 +124,7 @@ cd frontend && npm test          # frontendtester
 
 - **Enhetstester** (`backend/TrAInr.Api.Tests`) testar logiken utan databas: kalorier, statistik, progression, konton och AI-leverantörerna mot låtsasservrar.
 - **Integrationstester** (`backend/TrAInr.Api.IntegrationTests`) startar hela API:t mot en riktig SQL Server i Docker med Testcontainers. De testar inloggning, att användare bara ser sina egna pass, att migreringarna behåller gammal data och att modellen inte har ändringar som saknar migrering.
-- **Frontendtester** (Vitest) testar veckonummer och diagramskalor.
+- **Frontendtester** (Vitest) testar veckonummer, diagramskalor och att alla texter har en engelsk översättning.
 - **GitHub Actions** kör alla tester på varje pull request (`.github/workflows/ci.yml`). Publicera till Azure kör samma tester först och lägger bara ut appen om allt är grönt.
 
 ## Hur det fungerar
@@ -135,6 +135,7 @@ cd frontend && npm test          # frontendtester
 - **Statistik.** `Services/Statistics.cs` räknar fram veckovolym, kalorier per vecka, personbästa och uppskattat maxlyft (Epley). Diagrammen är egna SVG-komponenter utan extra bibliotek.
 - **Nästa vikt.** `Services/Progression.cs` föreslår nästa vikt med progressiv överbelastning: klarade du minst lika mycket som förra gången ökar vikten (5 kg för stora benövningar, 2,5 kg för andra basövningar, 1 kg för små övningar). Blev det färre reps upprepar du vikten, och efter tre pass utan framsteg backar du 10 %. Fungerar utan AI-nyckel. AI-coachen får förslagen som utgångspunkt och kan justera dem utifrån mål och anteckningar.
 - **Chatt med coachen.** Coachen får din profil, dina senaste 15 pass och dina personbästa, så att svaren handlar om din träning.
+- **Mörkt läge och engelska.** Knapparna uppe till höger byter mellan ljust och mörkt läge och mellan svenska och engelska (mer val under Profil). Utan eget val följer temat telefonen/datorn. Valen sparas i webbläsaren. Texterna står på svenska i koden och översätts i `frontend/src/i18n.en.ts`; ett test kontrollerar att ingen text saknas. Appen skickar språket i `Accept-Language`, så felmeddelanden, övningsbiblioteket, viktförslagen och AI-svaren kommer på samma språk.
 - **AI-svaren sparas** på passet i databasen så att de finns kvar i historiken. Ändras passet rensas de.
 - **Modell:** `claude-opus-5-5` som standard, ändras under `Ai:Model` i `appsettings.json` (t.ex. `claude-sonnet-5-5` eller `claude-haiku-5-5` för lägre kostnad).
 

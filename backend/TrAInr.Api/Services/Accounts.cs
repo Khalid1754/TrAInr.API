@@ -11,8 +11,10 @@ public static class Accounts
     // E-post jämförs utan skillnad på stora och små bokstäver.
     public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
-    public static string? ValidatePassword(string password) =>
-        password.Length < MinPasswordLength ? $"Lösenordet måste ha minst {MinPasswordLength} tecken." : null;
+    public static string? ValidatePassword(string password, Lang lang = Lang.Sv) =>
+        password.Length < MinPasswordLength
+            ? lang.Pick($"Lösenordet måste ha minst {MinPasswordLength} tecken.", $"The password must be at least {MinPasswordLength} characters.")
+            : null;
 
     // Id för den inloggade användaren. Alla pass och profiler hämtas med det.
     public static int UserId(this ClaimsPrincipal user) =>

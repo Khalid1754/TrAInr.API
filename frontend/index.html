@@ -11,6 +11,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="TrAInr" />
     <title>TrAInr</title>
+    <script>
+      // Sätter sparat tema och språk innan sidan ritas, så att den inte blinkar vit i mörkt läge.
+      try {
+        var theme = localStorage.getItem('trainr-theme')
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+        if (localStorage.getItem('trainr-lang') === 'en') document.documentElement.lang = 'en'
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

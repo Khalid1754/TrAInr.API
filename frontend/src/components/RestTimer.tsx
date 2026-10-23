@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLang } from '../i18n'
 
 const presets = [60, 90, 120, 180]
 const clock = () => Date.now()
@@ -38,6 +39,7 @@ export default function RestTimer() {
   const [now, setNow] = useState(clock)
   const [done, setDone] = useState(false)
   const beeped = useRef(false)
+  const { t } = useLang()
 
   const left = endsAt === null ? preset : Math.max(0, Math.ceil((endsAt - now) / 1000))
 
@@ -78,20 +80,20 @@ export default function RestTimer() {
   return (
     <div className={`rest-timer ${done ? 'done' : ''}`} role="timer" aria-live="polite">
       <div className="rest-time">
-        <span className="muted">{done ? 'Vilan är slut!' : 'Vila'}</span>
+        <span className="muted">{done ? t('Vilan är slut!') : t('Vila')}</span>
         <b>{format(running ? left : preset)}</b>
       </div>
       {running ? (
         <div className="rest-buttons">
           <button type="button" className="secondary" onClick={() => setEndsAt((e) => (e ?? clock()) + 15000)}>+15 s</button>
-          <button type="button" className="danger" onClick={() => setEndsAt(null)}>Stoppa</button>
+          <button type="button" className="danger" onClick={() => setEndsAt(null)}>{t('Stoppa')}</button>
         </div>
       ) : (
         <div className="rest-buttons">
           {presets.map((s) => (
             <button key={s} type="button" className={s === preset ? 'chip active' : 'chip'} onClick={() => choose(s)}>{format(s)}</button>
           ))}
-          <button type="button" onClick={() => start()}>Starta</button>
+          <button type="button" onClick={() => start()}>{t('Starta')}</button>
         </div>
       )}
     </div>

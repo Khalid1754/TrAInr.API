@@ -1,23 +1,25 @@
 import { useEffect, useState } from 'react'
 import { api, type Workout } from '../api'
 import { CaloriesBox, MealBox } from './AiResults'
+import { useLang } from '../i18n'
 import { useAsync } from './useAsync'
 
 export default function History({ onRepeat }: { onRepeat: (w: Workout) => void }) {
   const [workouts, setWorkouts] = useState<Workout[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const { t } = useLang()
 
   useEffect(() => {
     api.listWorkouts().then(setWorkouts).catch((e: Error) => setLoadError(e.message))
   }, [])
 
   if (loadError) return <p className="error">{loadError}</p>
-  if (!workouts) return <p className="muted">Laddar…</p>
+  if (!workouts) return <p className="muted">{t('Laddar…')}</p>
 
   return (
     <section>
-      <h2>Dina pass</h2>
-      {workouts.length === 0 && <p className="muted">Inga pass loggade ännu.</p>}
+      <h2>{t('Dina pass')}</h2>
+      {workouts.length === 0 && <p className="muted">{t('Inga pass loggade ännu.')}</p>}
       {workouts.map((w) => (
         <WorkoutCard
           key={w.id}
@@ -40,6 +42,7 @@ function WorkoutCard({ workout: w, onRepeat, onChange, onDelete }: {
   const calories = useAsync()
   const meal = useAsync()
   const remove = useAsync()
+  const { t } = useLang()
 
   async function estimateCalories() {
     const aiCalories = await calories.run(() => api.aiCalories(w.id))
@@ -52,7 +55,7 @@ function WorkoutCard({ workout: w, onRepeat, onChange, onDelete }: {
   }
 
   async function deleteWorkout() {
-    if (!confirm('Ta bort passet?')) return
+    if (!confirm(t('Ta bort passet?'))) return
     await remove.run(() => api.deleteWorkout(w.id))
     onDelete()
   }
@@ -71,15 +74,15 @@ function WorkoutCard({ workout: w, onRepeat, onChange, onDelete }: {
         ))}
       </ul>
       <div className="stats">
-        <div className="stat"><b>{w.estimate.totalKcal}</b><span>kcal (snabbuppskattning)</span></div>
+        <div className="stat"><b>{w.estimate.totalKcal}</b><span>{t('kcal (snabbuppskattning)')}</span></div>
         <div className="stat"><b>{w.estimate.totalMinutes}</b><span>min</span></div>
-        <div className="stat"><b>{Math.round(w.volumeKg)}</b><span>kg volym</span></div>
+        <div className="stat"><b>{Math.round(w.volumeKg)}</b><span>{t('kg volym')}</span></div>
       </div>
       <div className="actions">
-        <button onClick={estimateCalories} disabled={calories.busy}>{calories.busy ? 'Tänker…' : '🔥 AI-kalorier'}</button>
-        <button onClick={suggestMeal} disabled={meal.busy}>{meal.busy ? 'Tänker…' : '🥗 Återhämtningsmåltid'}</button>
-        <button className="secondary" onClick={onRepeat}>Kör igen</button>
-        <button className="danger" onClick={deleteWorkout} disabled={remove.busy}>Ta bort</button>
+        <button onClick={estimateCalories} disabled={calories.busy}>{calories.busy ? t('Tänker…') : t('🔥 AI-kalorier')}</button>
+        <button onClick={suggestMeal} disabled={meal.busy}>{meal.busy ? t('Tänker…') : t('🥗 Återhämtningsmåltid')}</button>
+        <button className="secondary" onClick={onRepeat}>{t('Kör igen')}</button>
+        <button className="danger" onClick={deleteWorkout} disabled={remove.busy}>{t('Ta bort')}</button>
       </div>
       {error && <p className="error">{error}</p>}
       {w.aiCalories && <CaloriesBox c={w.aiCalories} />}

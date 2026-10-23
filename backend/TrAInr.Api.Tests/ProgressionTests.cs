@@ -59,11 +59,13 @@ public class ProgressionTests
     private sealed class FakeProvider(string answer) : IAiProvider
     {
         public string? LastPrompt { get; private set; }
+        public string? LastSystem { get; private set; }
         public string Name => "Fake";
         public bool Enabled => true;
         public Task<string> GenerateJsonAsync(string system, string prompt, Dictionary<string, JsonElement> schema, AiEffort effort)
         {
             LastPrompt = prompt;
+            LastSystem = system;
             return Task.FromResult(answer);
         }
     }
@@ -82,6 +84,28 @@ public class ProgressionTests
         Assert.Contains("Användaren: Hur går det med bänken?", provider.LastPrompt);
         Assert.Contains("Bänkpress: 3 set × 8 reps @ 70 kg", provider.LastPrompt);
         Assert.Contains("bäst 70 kg", provider.LastPrompt);
+    }
+
+    [Fact]
+    public async Task Chat_AsksForEnglishWhenEnglishIsChosen()
+    {
+        var provider = new FakeProvider("""{"reply":"Keep going!"}""");
+        var ai = new TrainerAi(new ConfigurationBuilder().Build(), [provider]);
+        var stats = Statistics.Calculate([], 80, new DateOnly(2026, 10, 23));
+
+        await ai.ChatAsync(new UserProfile(), [], stats, [new ChatMessage("user", "How am I doing?")], Lang.En);
+        Assert.Contains("Always answer in English", provider.LastSystem);
+
+        await ai.ChatAsync(new UserProfile(), [], stats, [new ChatMessage("user", "Hur går det?")]);
+        Assert.Contains("Svara alltid på svenska", provider.LastSystem);
+    }
+
+    [Fact]
+    public void Suggest_ExplainsInChosenLanguage()
+    {
+        List<Workout> history = [Pass(1, "Bänkpress", 3, 8, 72.5), Pass(2, "Bänkpress", 3, 8, 72.5)];
+        Assert.Equal("Du klarade 3 × 8 på 72,5 kg. Öka till 75 kg.", Progression.Suggest("Bänkpress", history).Reason);
+        Assert.Equal("You did 3 × 8 at 72.5 kg. Go up to 75 kg.", Progression.Suggest("Bänkpress", history, Lang.En).Reason);
     }
 
     [Fact]

@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { api, type PlanResult } from '../api'
+import { useLang } from '../i18n'
 import { useAsync } from './useAsync'
 
 export default function Plan() {
   const [wishes, setWishes] = useState('')
   const [plan, setPlan] = useState<PlanResult | null>(null)
   const { busy, error, run } = useAsync()
+  const { t } = useLang()
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -15,15 +17,15 @@ export default function Plan() {
 
   return (
     <section>
-      <h2>AI-tränarens veckoschema</h2>
-      <p className="muted">Schemat bygger på din profil och dina loggade pass.</p>
+      <h2>{t('AI-tränarens veckoschema')}</h2>
+      <p className="muted">{t('Schemat bygger på din profil och dina loggade pass.')}</p>
       <form onSubmit={submit}>
         <label>
-          Önskemål (valfritt)
+          {t('Önskemål (valfritt)')}
           <input value={wishes} onChange={(e) => setWishes(e.target.value)}
-            placeholder="t.ex. vill fokusera på marklyft, har ont i axeln" />
+            placeholder={t('t.ex. vill fokusera på marklyft, har ont i axeln')} />
         </label>
-        <button type="submit" disabled={busy}>{busy ? 'Tänker…' : 'Ta fram schema'}</button>
+        <button type="submit" disabled={busy}>{busy ? t('Tänker…') : t('Ta fram schema')}</button>
       </form>
       {error && <p className="error">{error}</p>}
       {plan && (
@@ -35,7 +37,7 @@ export default function Plan() {
               <h3>{d.day} – {d.focus}</h3>
               <table>
                 <thead>
-                  <tr><th>Övning</th><th>Set</th><th>Reps</th><th>Vikt</th><th>Tips</th></tr>
+                  <tr><th>{t('Övning')}</th><th>{t('Set')}</th><th>{t('Reps')}</th><th>{t('Vikt')}</th><th>{t('Tips')}</th></tr>
                 </thead>
                 <tbody>
                   {d.exercises.map((x, i) => (
@@ -51,7 +53,7 @@ export default function Plan() {
               </table>
             </div>
           ))}
-          <h3>Progression</h3>
+          <h3>{t('Progression')}</h3>
           <ul className="compact">
             {plan.progressionTips.map((t, i) => <li key={i}>{t}</li>)}
           </ul>

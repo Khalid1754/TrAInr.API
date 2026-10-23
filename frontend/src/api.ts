@@ -1,3 +1,5 @@
+import { currentLang, t } from './i18n'
+
 export interface ExerciseInput {
   name: string
   sets: number
@@ -152,7 +154,8 @@ export function setUnauthorizedHandler(handler: () => void) {
 async function request<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
   const res = await fetch(path, {
     method: init.method ?? 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    // Servern svarar (felmeddelanden, övningsbibliotek och AI) på det språk som är valt i appen.
+    headers: { 'Content-Type': 'application/json', 'Accept-Language': currentLang() },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
   })
   if (res.status === 401 && !path.startsWith('/api/auth/')) onUnauthorized()
@@ -160,7 +163,7 @@ async function request<T>(path: string, init: { method?: string; body?: unknown 
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
     // ASP.NET:s valideringsfel kommer som { errors: {...} }, våra egna som { error: "..." }.
-    const message = data.error ?? (data.errors ? 'Kontrollera fälten och försök igen.' : `Fel ${res.status}`)
+    const message = data.error ?? (data.errors ? t('Kontrollera fälten och försök igen.') : t('Fel {status}', { status: res.status }))
     throw new Error(message)
   }
   return data as T

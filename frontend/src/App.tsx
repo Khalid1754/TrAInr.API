@@ -6,18 +6,21 @@ import History from './components/History'
 import Coach from './components/Coach'
 import Stats from './components/Stats'
 import ProfileForm from './components/ProfileForm'
+import Preferences from './components/Preferences'
+import { msg, useLang } from './i18n'
 
 const tabs = [
-  { id: 'log', label: 'Logga pass' },
-  { id: 'history', label: 'Historik' },
-  { id: 'stats', label: 'Statistik' },
-  { id: 'coach', label: 'AI-coach' },
-  { id: 'profile', label: 'Profil' },
+  { id: 'log', label: msg('Logga pass') },
+  { id: 'history', label: msg('Historik') },
+  { id: 'stats', label: msg('Statistik') },
+  { id: 'coach', label: msg('AI-coach') },
+  { id: 'profile', label: msg('Profil') },
 ] as const
 
 type Tab = (typeof tabs)[number]['id']
 
 export default function App() {
+  const { t } = useLang()
   const [tab, setTab] = useState<Tab>('log')
   const [template, setTemplate] = useState<Workout | null>(null)
   const [aiEnabled, setAiEnabled] = useState(true)
@@ -52,23 +55,23 @@ export default function App() {
           Tr<span>AI</span>nr
         </h1>
         <nav>
-          {tabs.map((t) => (
-            <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => { setTemplate(null); setTab(t.id) }}>
-              {t.label}
+          {tabs.map((tabItem) => (
+            <button key={tabItem.id} className={tab === tabItem.id ? 'active' : ''} onClick={() => { setTemplate(null); setTab(tabItem.id) }}>
+              {t(tabItem.label)}
             </button>
           ))}
-          <button onClick={logout}>Logga ut</button>
+          <button onClick={logout}>{t('Logga ut')}</button>
         </nav>
+        <Preferences />
       </header>
       {dbError && (
         <div className="banner">
-          Appen når inte databasen: <code>{dbError}</code>
+          {t('Appen når inte databasen:')} <code>{dbError}</code>
         </div>
       )}
       {!aiEnabled && (
         <div className="banner">
-          AI är avstängt. Sätt <code>GROQ_API_KEY</code> eller <code>GEMINI_API_KEY</code> (gratis) eller <code>ANTHROPIC_API_KEY</code> och starta om backenden för att använda AI-funktionerna.
-          Loggning och grundläggande kaloriuppskattning fungerar ändå.
+          {t('AI är avstängt. Sätt GROQ_API_KEY eller GEMINI_API_KEY (gratis) eller ANTHROPIC_API_KEY och starta om backenden för att använda AI-funktionerna. Loggning och grundläggande kaloriuppskattning fungerar ändå.')}
         </div>
       )}
       <main>

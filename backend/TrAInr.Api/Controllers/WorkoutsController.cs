@@ -75,7 +75,8 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
     public async Task<ExercisesResult> Exercises()
     {
         var workouts = await MyWorkouts().Include(w => w.Exercises).AsNoTracking().ToListAsync();
-        return new ExercisesResult(ExerciseLibrary.Muscles, ExerciseLibrary.All, ExerciseLibrary.Recent(workouts));
+        var lang = Request.PreferredLang();
+        return new ExercisesResult(ExerciseLibrary.MusclesIn(lang), ExerciseLibrary.AllIn(lang), ExerciseLibrary.Recent(workouts));
     }
 
     [HttpGet("stats")]
@@ -93,10 +94,11 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
         var workouts = await MyWorkouts().Include(w => w.Exercises).AsNoTracking()
             .OrderByDescending(w => w.Date).ThenByDescending(w => w.Id).ToListAsync();
         var names = request.Exercises.Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => n.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var rules = names.Select(n => Progression.Suggest(n, workouts)).ToList();
+        var lang = Request.PreferredLang();
+        var rules = names.Select(n => Progression.Suggest(n, workouts, lang)).ToList();
         if (!request.UseAi || rules.Count == 0) return new NextDto("regler", rules, null);
 
-        var result = await ai.SuggestNextAsync(await GetProfile(), workouts, rules);
+        var result = await ai.SuggestNextAsync(await GetProfile(), workouts, rules, lang);
         return new NextDto(ai.ProviderName ?? "AI", Progression.MergeWithRules(result.Exercises, rules), result.Tip);
     }
 
@@ -107,7 +109,7 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
             .OrderByDescending(w => w.Date).ThenByDescending(w => w.Id).ToListAsync();
         var profile = await GetProfile();
         var stats = Statistics.Calculate(workouts, profile.BodyWeightKg, DateOnly.FromDateTime(DateTime.Today));
-        return await ai.ChatAsync(profile, workouts, stats, request.Messages.TakeLast(12).ToList());
+        return await ai.ChatAsync(profile, workouts, stats, request.Messages.TakeLast(12).ToList(), Request.PreferredLang());
     }
 
     [HttpPost("ai/plan")]
@@ -115,7 +117,7 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
     {
         var history = await MyWorkouts().Include(w => w.Exercises)
             .OrderByDescending(w => w.Date).Take(20).ToListAsync();
-        return await ai.SuggestPlanAsync(await GetProfile(), history, request.Wishes);
+        return await ai.SuggestPlanAsync(await GetProfile(), history, request.Wishes, Request.PreferredLang());
     }
 
     [HttpPost("workouts/{id:int}/ai/calories")]
@@ -124,7 +126,7 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
         var workout = await Load(id);
         if (workout is null) return NotFound();
         var profile = await GetProfile();
-        var result = await ai.EstimateCaloriesAsync(profile, workout, CalorieEstimator.EstimateWorkout(workout.Exercises, profile.BodyWeightKg));
+        var result = await ai.EstimateCaloriesAsync(profile, workout, CalorieEstimator.EstimateWorkout(workout.Exercises, profile.BodyWeightKg), Request.PreferredLang());
         workout.AiCaloriesJson = JsonSerializer.Serialize(result, TrainerAi.Json);
         await db.SaveChangesAsync();
         return result;
@@ -138,7 +140,7 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
         var profile = await GetProfile();
         var burned = Deserialize<CaloriesResult>(workout.AiCaloriesJson)?.TotalKcal
             ?? CalorieEstimator.EstimateWorkout(workout.Exercises, profile.BodyWeightKg).TotalKcal;
-        var result = await ai.SuggestMealAsync(profile, workout, burned);
+        var result = await ai.SuggestMealAsync(profile, workout, burned, Request.PreferredLang());
         workout.AiMealJson = JsonSerializer.Serialize(result, TrainerAi.Json);
         await db.SaveChangesAsync();
         return result;

@@ -3,11 +3,12 @@ import { api, type ExerciseInput, type ExerciseLibrary, type Workout, type Worko
 import ExercisePicker from './ExercisePicker'
 import { describeLast } from './format'
 import RestTimer from './RestTimer'
+import { locale, useLang } from '../i18n'
 import { useAsync } from './useAsync'
 
 const emptyRow = (): ExerciseInput => ({ name: '', sets: 3, reps: 10, weightKg: 0, durationMin: null })
 const today = () => new Date().toISOString().slice(0, 10)
-const shortDate = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'numeric' })
+const shortDate = (iso: string) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'numeric' })
 const copyRows = (w: Workout) => w.exercises.map((e) => ({ ...e }))
 
 // template = ett tidigare pass som ska göras igen (från Historik).
@@ -23,9 +24,14 @@ export default function LogWorkout({ onSaved, template, aiEnabled }: { onSaved: 
   const [advice, setAdvice] = useState<{ source: string; reasons: Map<string, string>; tip: string | null } | null>(null)
   const { busy, error, run } = useAsync()
   const coach = useAsync()
+  const { t, lang } = useLang()
 
+  // Biblioteket hämtas igen när språket byts, eftersom övningarna har namn på båda språken.
   useEffect(() => {
     api.exercises().then(setLibrary).catch(() => {})
+  }, [lang])
+
+  useEffect(() => {
     api.listWorkouts().then((w) => setPrevious(w.slice(0, 15))).catch(() => {})
   }, [])
 
@@ -87,43 +93,43 @@ export default function LogWorkout({ onSaved, template, aiEnabled }: { onSaved: 
 
   return (
     <section>
-      <h2>Nytt träningspass</h2>
+      <h2>{t('Nytt träningspass')}</h2>
       <form onSubmit={submit}>
         {previous.length > 0 && (
           <label>
-            Kopiera ett tidigare pass
+            {t('Kopiera ett tidigare pass')}
             <select value="" onChange={(e) => copyWorkout(e.target.value)}>
-              <option value="">Välj pass…</option>
+              <option value="">{t('Välj pass…')}</option>
               {previous.map((w) => <option key={w.id} value={w.id}>{shortDate(w.date)} · {w.name}</option>)}
             </select>
           </label>
         )}
         <div className="row">
           <label>
-            Namn <input value={name} onChange={(e) => setName(e.target.value)} placeholder="t.ex. Ben & rygg" required />
+            {t('Namn')} <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('t.ex. Ben & rygg')} required />
           </label>
           <label>
-            Datum <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            {t('Datum')} <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           </label>
         </div>
         <table className="exercises">
           <thead>
             <tr>
-              <th>Övning</th><th>Set</th><th>Reps</th><th>Vikt (kg)</th><th>Min (kondition)</th><th />
+              <th>{t('Övning')}</th><th>{t('Set')}</th><th>{t('Reps')}</th><th>{t('Vikt (kg)')}</th><th>{t('Min (kondition)')}</th><th />
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={i}>
                 <td>
-                  <input list="exercise-suggestions" value={r.name} placeholder="Bänkpress" required
+                  <input list="exercise-suggestions" value={r.name} placeholder={t('Bänkpress')} required
                     onChange={(e) => updateRow(i, { name: e.target.value })} />
                   {advice?.reasons.has(r.name.trim().toLowerCase()) && (
                     <small className="coach-reason">💡 {advice.reasons.get(r.name.trim().toLowerCase())}</small>
                   )}
                   {recent.has(r.name.trim().toLowerCase()) && (
                     <small className="muted last-time">
-                      Förra gången ({shortDate(recent.get(r.name.trim().toLowerCase())!.lastDate)}): {describeLast(recent.get(r.name.trim().toLowerCase())!)}
+                      {t('Förra gången ({date}):', { date: shortDate(recent.get(r.name.trim().toLowerCase())!.lastDate) })} {describeLast(recent.get(r.name.trim().toLowerCase())!)}
                     </small>
                   )}
                 </td>
@@ -135,7 +141,7 @@ export default function LogWorkout({ onSaved, template, aiEnabled }: { onSaved: 
                     onChange={(e) => updateRow(i, { durationMin: e.target.value === '' ? null : Number(e.target.value) })} />
                 </td>
                 <td>
-                  <button type="button" className="icon" title="Ta bort" disabled={rows.length === 1}
+                  <button type="button" className="icon" title={t('Ta bort')} disabled={rows.length === 1}
                     onClick={() => setRows((prev) => prev.filter((_, j) => j !== i))}>×</button>
                 </td>
               </tr>
@@ -149,16 +155,16 @@ export default function LogWorkout({ onSaved, template, aiEnabled }: { onSaved: 
           <ExercisePicker data={library} onPick={addExercise} onClose={() => setPicking(false)} />
         ) : (
           <div className="actions">
-            {library && <button type="button" className="secondary" onClick={() => setPicking(true)}>+ Välj övning</button>}
-            <button type="button" className="secondary" onClick={() => setRows((prev) => [...prev, emptyRow()])}>+ Tom rad</button>
+            {library && <button type="button" className="secondary" onClick={() => setPicking(true)}>{t('+ Välj övning')}</button>}
+            <button type="button" className="secondary" onClick={() => setRows((prev) => [...prev, emptyRow()])}>{t('+ Tom rad')}</button>
           </div>
         )}
         {rows.some((r) => r.name.trim()) && (
           <div className="actions">
-            <button type="button" className="secondary" disabled={coach.busy} onClick={() => suggest(false)}>Föreslå vikter</button>
+            <button type="button" className="secondary" disabled={coach.busy} onClick={() => suggest(false)}>{t('Föreslå vikter')}</button>
             {aiEnabled && (
               <button type="button" className="secondary" disabled={coach.busy} onClick={() => suggest(true)}>
-                {coach.busy ? 'Tänker…' : '🤖 Fråga AI-coachen'}
+                {coach.busy ? t('Tänker…') : t('🤖 Fråga AI-coachen')}
               </button>
             )}
           </div>
@@ -166,16 +172,17 @@ export default function LogWorkout({ onSaved, template, aiEnabled }: { onSaved: 
         {coach.error && <p className="error">{coach.error}</p>}
         {advice?.tip && <div className="ai-box">🤖 {advice.tip}</div>}
         <label>
-          Anteckningar <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Hur kändes passet?" />
+          {t('Anteckningar')} <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('Hur kändes passet?')} />
         </label>
         {estimate && (
           <div className="muted">
-            Snabbuppskattning: ca {estimate.estimate.totalKcal} kcal · {estimate.estimate.totalMinutes} min · total volym{' '}
-            {Math.round(estimate.volumeKg)} kg
+            {t('Snabbuppskattning: ca {kcal} kcal · {min} min · total volym {kg} kg', {
+              kcal: estimate.estimate.totalKcal, min: estimate.estimate.totalMinutes, kg: Math.round(estimate.volumeKg),
+            })}
           </div>
         )}
         {error && <p className="error">{error}</p>}
-        <button type="submit" disabled={busy}>{busy ? 'Sparar…' : 'Spara pass'}</button>
+        <button type="submit" disabled={busy}>{busy ? t('Sparar…') : t('Spara pass')}</button>
       </form>
       <RestTimer />
     </section>

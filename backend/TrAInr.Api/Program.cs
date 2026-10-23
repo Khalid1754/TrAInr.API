@@ -60,7 +60,8 @@ builder.Services.AddRateLimiter(o =>
     {
         ctx.HttpContext.Response.StatusCode = 429;
         return new ValueTask(ctx.HttpContext.Response.WriteAsJsonAsync(
-            new { error = "För många försök. Vänta en minut och försök igen." }, token));
+            new { error = ctx.HttpContext.Request.PreferredLang().Pick("För många försök. Vänta en minut och försök igen.",
+                "Too many attempts. Wait a minute and try again.") }, token));
     };
 });
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
@@ -69,20 +70,21 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
 
 var app = builder.Build();
 
-// Översätter fel till svenska meddelanden som frontend kan visa.
+// Översätter fel till meddelanden på appens språk som frontend kan visa.
 app.UseExceptionHandler(handler => handler.Run(async context =>
 {
     var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+    var lang = context.Request.PreferredLang();
     var (status, message) = error switch
     {
         AiUnavailableException e => (503, e.Message),
-        AnthropicUnauthorizedException => (502, "Ogiltig ANTHROPIC_API_KEY."),
-        AnthropicRateLimitException => (502, "AI:n är överbelastad just nu, försök igen om en stund."),
-        AnthropicApiException e => (502, $"AI-fel: {e.Message}"),
+        AnthropicUnauthorizedException => (502, lang.Pick("Ogiltig ANTHROPIC_API_KEY.", "Invalid ANTHROPIC_API_KEY.")),
+        AnthropicRateLimitException => (502, lang.Pick("AI:n är överbelastad just nu, försök igen om en stund.", "The AI is overloaded right now, try again in a moment.")),
+        AnthropicApiException e => (502, $"{lang.Pick("AI-fel", "AI error")}: {e.Message}"),
         AiProviderException e => (502, e.Message),
         SqlException or RetryLimitExceededException =>
-            (503, "Databasen svarar inte just nu. Vänta en minut och försök igen."),
-        _ => (500, "Något gick fel på servern."),
+            (503, lang.Pick("Databasen svarar inte just nu. Vänta en minut och försök igen.", "The database is not responding right now. Wait a minute and try again.")),
+        _ => (500, lang.Pick("Något gick fel på servern.", "Something went wrong on the server.")),
     };
     context.Response.StatusCode = status;
     await context.Response.WriteAsJsonAsync(new { error = message });

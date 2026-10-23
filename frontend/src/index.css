@@ -2,8 +2,17 @@
   --bg: #f6f7f9; --card: #fff; --text: #1b1f24; --muted: #66707c; --border: #e1e4e8;
   --accent: #16a34a; --accent-dark: #15803d; --danger: #dc2626; --soft: #ecfdf3;
 }
+/* Mörkt läge: följer telefonen/datorn om man inte har valt själv (data-theme sätts av knappen i sidhuvudet). */
+:root { color-scheme: light; --reason: var(--accent-dark); --banner-bg: #fef3c7; --banner-text: #78350f; }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #0f1215; --card: #181c20; --text: #e7eaee; --muted: #9aa4af; --border: #2a3036; --soft: #12261a; }
+  :root:not([data-theme="light"]) {
+    color-scheme: dark; --bg: #0f1215; --card: #181c20; --text: #e7eaee; --muted: #9aa4af; --border: #2a3036; --soft: #12261a;
+    --reason: var(--accent); --banner-bg: #3a2e0b; --banner-text: #fde68a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark; --bg: #0f1215; --card: #181c20; --text: #e7eaee; --muted: #9aa4af; --border: #2a3036; --soft: #12261a;
+  --reason: var(--accent); --banner-bg: #3a2e0b; --banner-text: #fde68a;
 }
 * { box-sizing: border-box; }
 body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
@@ -12,9 +21,13 @@ h1 { margin: 0; font-size: 24px; } h1 span { color: var(--accent); }
 nav { display: flex; gap: 4px; flex-wrap: wrap; }
 nav button { background: none; color: var(--muted); border: none; padding: 8px 12px; border-radius: 8px; }
 nav button.active { background: var(--soft); color: var(--accent); font-weight: 600; }
+.prefs { display: flex; gap: 2px; align-items: center; }
+.prefs button.icon:hover { background: var(--soft); }
+.prefs .lang { font-size: 13px; font-weight: 700; letter-spacing: .5px; min-width: 36px; }
+.login .prefs { justify-content: flex-end; }
 main { max-width: 900px; margin: 0 auto; padding: 16px; }
 .tab { display: none; } .tab.active { display: block; }
-.banner { background: #fef3c7; color: #78350f; padding: 10px 16px; font-size: 14px; }
+.banner { background: var(--banner-bg); color: var(--banner-text); padding: 10px 16px; font-size: 14px; }
 form { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: grid; gap: 12px; }
 .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
@@ -51,6 +64,8 @@ ul.compact { margin: 4px 0; padding-left: 20px; }
 @media (max-width: 600px) {
   /* 16px hindrar iPhone från att zooma in när man trycker i ett fält. */
   input, select, textarea { font-size: 16px; }
+  /* Tema- och språkknapparna hamnar bredvid loggan och flikarna på raden under. */
+  header nav { order: 1; }
   table.exercises thead { display: none; }
   table.exercises tr { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 4px; margin-bottom: 8px; }
   table.exercises td:first-child { grid-column: 1 / -1; width: auto; }
@@ -104,8 +119,7 @@ button.chip.active { background: var(--soft); color: var(--accent); border-color
 .rest-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* AI-coachen */
-.coach-reason { display: block; font-size: 12px; margin-top: 2px; color: var(--accent-dark); }
-@media (prefers-color-scheme: dark) { .coach-reason { color: var(--accent); } }
+.coach-reason { display: block; font-size: 12px; margin-top: 2px; color: var(--reason); }
 .chat { display: grid; gap: 10px; }
 .chat p { margin: 0; }
 .messages { display: grid; gap: 8px; max-height: 55vh; overflow-y: auto; }

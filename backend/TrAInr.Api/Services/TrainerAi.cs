@@ -15,7 +15,7 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
 {
     private const string SystemPrompt = """
         Du är TrAInr, en kunnig och peppande personlig tränare och kostrådgivare.
-        Svara alltid på svenska. Basera råd på etablerad träningsvetenskap (progressiv överbelastning,
+        Basera råd på etablerad träningsvetenskap (progressiv överbelastning,
         volym per muskelgrupp och vecka, återhämtning) och näringslära (protein 1,6–2,2 g/kg/dag,
         kolhydrater för att fylla på glykogen). Var konkret och anpassa efter användarens profil och historik.
         Du ger allmänna råd, inte medicinsk rådgivning.
@@ -35,7 +35,7 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
     public bool Enabled => _provider is not null;
     public string? ProviderName => _provider?.Name;
 
-    public Task<PlanResult> SuggestPlanAsync(UserProfile profile, IEnumerable<Workout> history, string? wishes)
+    public Task<PlanResult> SuggestPlanAsync(UserProfile profile, IEnumerable<Workout> history, string? wishes, Lang lang = Lang.Sv)
     {
         var historyText = string.Join("\n\n", history.Take(20).Select(Describe));
         return AskAsync<PlanResult>($"""
@@ -47,10 +47,10 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
             {(string.IsNullOrWhiteSpace(wishes) ? "" : $"Användarens önskemål: {wishes}\n")}
             Ta fram det bästa veckoschemat för användaren med exakt {profile.DaysPerWeek} träningsdagar.
             Bygg vidare på övningar användaren redan gör och föreslå vikter utifrån historiken.
-            """, AiEffort.Medium);
+            """, AiEffort.Medium, lang);
     }
 
-    public Task<CaloriesResult> EstimateCaloriesAsync(UserProfile profile, Workout workout, WorkoutEstimate baseline)
+    public Task<CaloriesResult> EstimateCaloriesAsync(UserProfile profile, Workout workout, WorkoutEstimate baseline, Lang lang = Lang.Sv)
     {
         var perExercise = string.Join(", ", baseline.Exercises.Select(e => $"{e.Name}: {e.Kcal} kcal"));
         return AskAsync<CaloriesResult>($"""
@@ -62,10 +62,10 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
 
             Gör en mer träffsäker uppskattning av hur många kalorier användaren förbränt på passet, utifrån
             övningstyp, vikt, reps, set och kroppsvikt. Ange ett rimligt intervall.
-            """, AiEffort.Low);
+            """, AiEffort.Low, lang);
     }
 
-    public Task<MealResult> SuggestMealAsync(UserProfile profile, Workout workout, int caloriesBurned) =>
+    public Task<MealResult> SuggestMealAsync(UserProfile profile, Workout workout, int caloriesBurned, Lang lang = Lang.Sv) =>
         AskAsync<MealResult>($"""
             {Describe(profile)}
 
@@ -74,9 +74,9 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
 
             Föreslå den ideala återhämtningsmåltiden efter detta pass för bästa möjliga återhämtning,
             anpassad efter användarens mål, kroppsvikt och kostpreferenser. Använd ingredienser som är lätta att hitta i en svensk matbutik.
-            """, AiEffort.Low);
+            """, AiEffort.Low, lang);
 
-    public Task<NextWorkoutResult> SuggestNextAsync(UserProfile profile, IEnumerable<Workout> history, IReadOnlyList<NextExercise> baseline)
+    public Task<NextWorkoutResult> SuggestNextAsync(UserProfile profile, IEnumerable<Workout> history, IReadOnlyList<NextExercise> baseline, Lang lang = Lang.Sv)
     {
         var historyText = string.Join("\n\n", history.Take(10).Select(Describe));
         var rules = string.Join("\n", baseline.Select(e => $"- {e.Name}: {e.Sets} × {e.Reps} @ {e.WeightKg} kg ({e.Reason})"));
@@ -93,10 +93,10 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
             Utgå från förslagen men justera om historiken, målet eller anteckningarna talar för det
             (t.ex. trötthet, smärta eller att det gick lätt). Vikter i steg om 0,5, 1, 2,5 eller 5 kg.
             Sätt durationMin för konditionsövningar och null annars.
-            """, AiEffort.Low);
+            """, AiEffort.Low, lang);
     }
 
-    public Task<ChatResult> ChatAsync(UserProfile profile, IEnumerable<Workout> history, StatsResult stats, IReadOnlyList<ChatMessage> messages)
+    public Task<ChatResult> ChatAsync(UserProfile profile, IEnumerable<Workout> history, StatsResult stats, IReadOnlyList<ChatMessage> messages, Lang lang = Lang.Sv)
     {
         var historyText = string.Join("\n\n", history.Take(15).Select(Describe));
         var records = string.Join("\n", stats.Exercises.Where(e => e.BestWeightKg > 0).Take(15)
@@ -118,15 +118,22 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
 
             Svara på användarens senaste meddelande som deras personliga tränare. Använd siffrorna ovan
             när det passar. Handlar frågan om skada eller sjukdom, ge allmänna råd och tipsa om vården.
-            """, AiEffort.Low);
+            """, AiEffort.Low, lang);
     }
 
-    private async Task<T> AskAsync<T>(string prompt, AiEffort effort)
+    // Instruktionerna är på svenska. Svaret skrivs på det språk som är valt i appen.
+    internal static string SystemPromptFor(Lang lang) => SystemPrompt + "\n" + lang.Pick(
+        "Svara alltid på svenska.",
+        "Always answer in English. Write every text in the JSON in English, even though these instructions and the user's data are in Swedish.");
+
+    private async Task<T> AskAsync<T>(string prompt, AiEffort effort, Lang lang)
     {
         if (_provider is null)
-            throw new AiUnavailableException("AI är inte aktiverat. Sätt GEMINI_API_KEY (gratis) eller ANTHROPIC_API_KEY och starta om servern.");
+            throw new AiUnavailableException(lang.Pick(
+                "AI är inte aktiverat. Sätt GROQ_API_KEY eller GEMINI_API_KEY (gratis) eller ANTHROPIC_API_KEY och starta om servern.",
+                "AI is not enabled. Set GROQ_API_KEY or GEMINI_API_KEY (free) or ANTHROPIC_API_KEY and restart the server."));
 
-        var text = await _provider.GenerateJsonAsync(SystemPrompt, prompt, SchemaFor<T>(), effort);
+        var text = await _provider.GenerateJsonAsync(SystemPromptFor(lang), prompt, SchemaFor<T>(), effort);
         try
         {
             return JsonSerializer.Deserialize<T>(text, Json)
@@ -134,7 +141,7 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
         }
         catch (JsonException)
         {
-            throw new AiProviderException($"AI-svaret från {_provider.Name} kunde inte tolkas.");
+            throw new AiProviderException(lang.Pick($"AI-svaret från {_provider.Name} kunde inte tolkas.", $"The answer from {_provider.Name} could not be read."));
         }
     }
 
