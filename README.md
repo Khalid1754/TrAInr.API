@@ -1,5 +1,7 @@
 # TrAInr
 
+[![Tester](https://github.com/Khalid1754/TrAInr.API/actions/workflows/ci.yml/badge.svg)](https://github.com/Khalid1754/TrAInr.API/actions/workflows/ci.yml)
+
 Träningsapp där du loggar dina pass och får hjälp av AI (Claude) med:
 
 1. **Träningsschema**: ett veckoschema anpassat efter din profil, ditt mål och dina loggade pass, med föreslagna vikter.
@@ -11,7 +13,7 @@ Träningsapp där du loggar dina pass och får hjälp av AI (Claude) med:
 | Del | Teknik | Mapp |
 |---|---|---|
 | Backend | .NET 10, ASP.NET Core Web API, EF Core 10 | `backend/TrAInr.Api` |
-| Tester | xUnit | `backend/TrAInr.Api.Tests` |
+| Tester | xUnit, Testcontainers, Vitest, GitHub Actions | `backend/TrAInr.Api.Tests`, `backend/TrAInr.Api.IntegrationTests`, `frontend/src/**/*.test.ts` |
 | Frontend | React 19, TypeScript, Vite | `frontend` |
 | Databas | SQL Server (hanteras i SSMS) | migreringar i `backend/TrAInr.Api/Data/Migrations`, SQL-skript i `database/TrAInr.sql` |
 | AI | Groq eller Google Gemini (gratis) eller Claude via det officiella Anthropic-paketet | `backend/TrAInr.Api/Services/TrainerAi.cs`, `AiProviders.cs` |
@@ -116,8 +118,14 @@ npm run dev
 ### Tester
 
 ```bash
-dotnet test TrAInr.slnx
+dotnet test TrAInr.slnx          # alla backendtester (integrationstesterna kräver Docker)
+cd frontend && npm test          # frontendtester
 ```
+
+- **Enhetstester** (`backend/TrAInr.Api.Tests`) testar logiken utan databas: kalorier, statistik, progression, konton och AI-leverantörerna mot låtsasservrar.
+- **Integrationstester** (`backend/TrAInr.Api.IntegrationTests`) startar hela API:t mot en riktig SQL Server i Docker med Testcontainers. De testar inloggning, att användare bara ser sina egna pass, att migreringarna behåller gammal data och att modellen inte har ändringar som saknar migrering.
+- **Frontendtester** (Vitest) testar veckonummer och diagramskalor.
+- **GitHub Actions** kör alla tester på varje pull request (`.github/workflows/ci.yml`). Publicera till Azure kör samma tester först och lägger bara ut appen om allt är grönt.
 
 ## Hur det fungerar
 

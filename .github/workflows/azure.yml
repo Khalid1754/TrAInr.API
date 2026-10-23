@@ -1,6 +1,7 @@
 # Bygger React-appen och .NET-API:t till ett paket och lägger ut det på Azure App Service
-# varje gång main uppdateras. Gör ingenting förrän variabeln AZURE_WEBAPP_NAME och
-# hemligheten AZURE_WEBAPP_PUBLISH_PROFILE finns i GitHub (se MOLNET.md).
+# varje gång main uppdateras. Alla tester (ci.yml) måste gå igenom först, annars läggs inget ut.
+# Gör ingenting förrän variabeln AZURE_WEBAPP_NAME och hemligheten AZURE_WEBAPP_PUBLISH_PROFILE
+# finns i GitHub (se MOLNET.md).
 name: Publicera till Azure
 
 on:
@@ -9,7 +10,11 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: test
     if: vars.AZURE_WEBAPP_NAME != ''
     runs-on: ubuntu-latest
     steps:
@@ -29,9 +34,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - name: Testa och bygg API
+      - name: Bygg API
         run: |
-          dotnet test TrAInr.slnx
           dotnet publish backend/TrAInr.Api -c Release -o publish
           cp -r frontend/dist publish/wwwroot
 

@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/backend/">
+    <Project Path="backend/TrAInr.Api.IntegrationTests/TrAInr.Api.IntegrationTests.csproj" />
     <Project Path="backend/TrAInr.Api.Tests/TrAInr.Api.Tests.csproj" />
     <Project Path="backend/TrAInr.Api/TrAInr.Api.csproj" />
   </Folder>
