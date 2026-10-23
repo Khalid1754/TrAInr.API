@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { api, type ChatMessage } from '../api'
 import Plan from './Plan'
+import { msg, useLang } from '../i18n'
 import { useAsync } from './useAsync'
 
 const starters = [
-  'Hur går det med min styrka?',
-  'Vad ska jag äta före passet?',
-  'Hur många vilodagar behöver jag?',
-  'Vilken muskelgrupp tränar jag för lite?',
+  msg('Hur går det med min styrka?'),
+  msg('Vad ska jag äta före passet?'),
+  msg('Hur många vilodagar behöver jag?'),
+  msg('Vilken muskelgrupp tränar jag för lite?'),
 ]
 
 // Samtalet sparas bara i den här fliken i webbläsaren, så det finns kvar om man byter flik.
@@ -25,6 +26,7 @@ export default function Coach({ aiEnabled }: { aiEnabled: boolean }) {
   const [text, setText] = useState('')
   const { busy, error, run } = useAsync()
   const end = useRef<HTMLDivElement>(null)
+  const { t } = useLang()
 
   useEffect(() => {
     try {
@@ -53,31 +55,31 @@ export default function Coach({ aiEnabled }: { aiEnabled: boolean }) {
   return (
     <>
       <section>
-        <h2>Fråga AI-coachen</h2>
+        <h2>{t('Fråga AI-coachen')}</h2>
         {!aiEnabled ? (
-          <p className="muted">AI är avstängt. Lägg in en AI-nyckel för att chatta med coachen.</p>
+          <p className="muted">{t('AI är avstängt. Lägg in en AI-nyckel för att chatta med coachen.')}</p>
         ) : (
           <div className="card chat">
-            <p className="muted">Coachen ser din profil, dina senaste pass och dina personbästa.</p>
+            <p className="muted">{t('Coachen ser din profil, dina senaste pass och dina personbästa.')}</p>
             <div className="messages">
               {messages.map((m, i) => (
                 <div key={i} className={`message ${m.role}`}>{m.text}</div>
               ))}
-              {busy && <div className="message coach muted">Tänker…</div>}
+              {busy && <div className="message coach muted">{t('Tänker…')}</div>}
               <div ref={end} />
             </div>
             {messages.length === 0 && (
               <div className="chips wrap">
-                {starters.map((s) => <button key={s} type="button" className="chip" onClick={() => send(s)}>{s}</button>)}
+                {starters.map((s) => <button key={s} type="button" className="chip" onClick={() => send(t(s))}>{t(s)}</button>)}
               </div>
             )}
             {error && <p className="error">{error}</p>}
             <form className="chat-input" onSubmit={submit}>
-              <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Skriv en fråga…" maxLength={2000} />
-              <button type="submit" disabled={busy || !text.trim()}>Skicka</button>
+              <input value={text} onChange={(e) => setText(e.target.value)} placeholder={t('Skriv en fråga…')} maxLength={2000} />
+              <button type="submit" disabled={busy || !text.trim()}>{t('Skicka')}</button>
             </form>
             {messages.length > 0 && (
-              <button type="button" className="link" onClick={() => setMessages([])}>Börja om</button>
+              <button type="button" className="link" onClick={() => setMessages([])}>{t('Börja om')}</button>
             )}
           </div>
         )}

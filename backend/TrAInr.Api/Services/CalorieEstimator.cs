@@ -25,9 +25,9 @@ public static class CalorieEstimator
 
     private static readonly (ExerciseCategory Category, string[] Keywords)[] Keywords =
     [
-        (ExerciseCategory.Cardio, ["löp", "run", "cykel", "cykl", "bike", "promenad", "walk", "crosstrainer", "simning", "swim", "roddmaskin", "rower", "hopprep", "jump rope", "intervall", "hiit"]),
-        (ExerciseCategory.Bodyweight, ["armhäv", "push-up", "pushup", "chins", "pull-up", "pullup", "dips", "burpee", "plank", "sit-up", "situp"]),
-        (ExerciseCategory.Compound, ["knäböj", "squat", "marklyft", "deadlift", "bänk", "bench", "press", "rodd", "row", "utfall", "lunge", "clean", "snatch", "thruster", "hip thrust"]),
+        (ExerciseCategory.Cardio, ["löp", "run", "cykel", "cykl", "cycl", "bike", "promenad", "walk", "crosstrainer", "cross trainer", "elliptical", "simning", "swim", "roddmaskin", "rower", "rowing machine", "hopprep", "jump rope", "interval", "hiit"]),
+        (ExerciseCategory.Bodyweight, ["armhäv", "push-up", "pushup", "chins", "chin-up", "chinup", "pull-up", "pullup", "dips", "burpee", "plank", "sit-up", "situp"]),
+        (ExerciseCategory.Compound, ["knäböj", "böj", "squat", "marklyft", "deadlift", "bänk", "bench", "press", "rodd", "row", "utfall", "lunge", "clean", "snatch", "thruster", "hip thrust"]),
     ];
 
     public static ExerciseCategory Categorize(string name)

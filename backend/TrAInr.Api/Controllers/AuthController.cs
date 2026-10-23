@@ -40,12 +40,13 @@ public class AuthController(TrainrDbContext db, InviteCode invite) : ControllerB
     [EnableRateLimiting("login")]
     public async Task<IActionResult> Register(RegisterInput input)
     {
-        if (!invite.Matches(input.InviteCode)) return BadRequest(new { error = "Fel inbjudningskod." });
-        if (Accounts.ValidatePassword(input.Password) is { } problem) return BadRequest(new { error = problem });
+        var lang = Request.PreferredLang();
+        if (!invite.Matches(input.InviteCode)) return BadRequest(new { error = lang.Pick("Fel inbjudningskod.", "Wrong invite code.") });
+        if (Accounts.ValidatePassword(input.Password, lang) is { } problem) return BadRequest(new { error = problem });
 
         var email = Accounts.NormalizeEmail(input.Email);
         if (await db.Users.AnyAsync(u => u.Email == email))
-            return Conflict(new { error = "Det finns redan ett konto med den e-postadressen." });
+            return Conflict(new { error = lang.Pick("Det finns redan ett konto med den e-postadressen.", "There is already an account with that email address.") });
 
         var isFirstUser = !await db.Users.AnyAsync();
         var user = new User { Email = email };
@@ -77,7 +78,7 @@ public class AuthController(TrainrDbContext db, InviteCode invite) : ControllerB
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
         var result = user is null ? PasswordVerificationResult.Failed : Hasher.VerifyHashedPassword(user, user.PasswordHash, input.Password);
         if (result == PasswordVerificationResult.Failed)
-            return Unauthorized(new { error = "Fel e-post eller lösenord." });
+            return Unauthorized(new { error = Request.PreferredLang().Pick("Fel e-post eller lösenord.", "Wrong email or password.") });
 
         if (result == PasswordVerificationResult.SuccessRehashNeeded)
         {

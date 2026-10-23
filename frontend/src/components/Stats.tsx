@@ -1,61 +1,64 @@
 import { useEffect, useState } from 'react'
 import { api, type Stats as StatsData } from '../api'
 import { BarChart, LineChart } from './Charts'
+import { useLang } from '../i18n'
 import { weekNumber } from './format'
-
-const kg = (n: number) => `${n.toLocaleString('sv-SE')} kg`
-const shortDate = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'numeric' })
 
 export default function Stats() {
   const [stats, setStats] = useState<StatsData | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [exerciseName, setExerciseName] = useState('')
   const [measure, setMeasure] = useState<'top' | 'oneRm'>('top')
+  const { t, locale } = useLang()
+  const kg = (n: number) => `${n.toLocaleString(locale)} kg`
+  const shortDate = (iso: string) => new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'numeric' })
 
   useEffect(() => {
     api.stats().then(setStats).catch((e: Error) => setLoadError(e.message))
   }, [])
 
   if (loadError) return <p className="error">{loadError}</p>
-  if (!stats) return <p className="muted">Laddar…</p>
-  if (stats.summary.workouts === 0) return <section><h2>Statistik</h2><p className="muted">Logga ett pass så dyker statistiken upp här.</p></section>
+  if (!stats) return <p className="muted">{t('Laddar…')}</p>
+  if (stats.summary.workouts === 0) return <section><h2>{t('Statistik')}</h2><p className="muted">{t('Logga ett pass så dyker statistiken upp här.')}</p></section>
 
   const { summary, weeks } = stats
   const weighted = stats.exercises.filter((e) => e.bestWeightKg > 0)
   const exercise = weighted.find((e) => e.name === exerciseName) ?? weighted[0]
 
-  const weekLabel = (w: (typeof weeks)[number]) => `v ${weekNumber(w.weekStart)}`
-  const passText = (n: number) => `${n} pass`
+  const weekLabel = (w: (typeof weeks)[number]) => t('v {week}', { week: weekNumber(w.weekStart) })
+  const passText = (n: number) => (n === 1 ? t('1 pass') : t('{n} pass', { n }))
 
   return (
     <section>
-      <h2>Statistik</h2>
+      <h2>{t('Statistik')}</h2>
       <div className="card stats">
-        <div className="stat"><b>{summary.workouts}</b><span>pass totalt</span></div>
-        <div className="stat"><b>{summary.workoutsLast30Days}</b><span>senaste 30 dagarna</span></div>
-        <div className="stat"><b>{summary.weekStreak}</b><span>veckor i rad</span></div>
-        <div className="stat"><b>{(summary.totalVolumeKg / 1000).toLocaleString('sv-SE', { maximumFractionDigits: 1 })} ton</b><span>lyft totalt</span></div>
-        <div className="stat"><b>{summary.totalKcal.toLocaleString('sv-SE')}</b><span>kcal totalt</span></div>
+        <div className="stat"><b>{summary.workouts}</b><span>{t('pass totalt')}</span></div>
+        <div className="stat"><b>{summary.workoutsLast30Days}</b><span>{t('senaste 30 dagarna')}</span></div>
+        <div className="stat"><b>{summary.weekStreak}</b><span>{t('veckor i rad')}</span></div>
+        <div className="stat"><b>{t('{n} ton', { n: (summary.totalVolumeKg / 1000).toLocaleString(locale, { maximumFractionDigits: 1 }) })}</b><span>{t('lyft totalt')}</span></div>
+        <div className="stat"><b>{summary.totalKcal.toLocaleString(locale)}</b><span>{t('kcal totalt')}</span></div>
       </div>
 
       {exercise && (
         <div className="card">
-          <h3>Utveckling per övning</h3>
+          <h3>{t('Utveckling per övning')}</h3>
           <div className="chart-controls">
-            <select value={exercise.name} onChange={(e) => setExerciseName(e.target.value)} aria-label="Övning">
+            <select value={exercise.name} onChange={(e) => setExerciseName(e.target.value)} aria-label={t('Övning')}>
               {weighted.map((e) => <option key={e.name} value={e.name}>{e.name}</option>)}
             </select>
             <div className="segmented">
-              <button type="button" className={measure === 'top' ? 'active' : ''} onClick={() => setMeasure('top')}>Tyngsta vikt</button>
-              <button type="button" className={measure === 'oneRm' ? 'active' : ''} onClick={() => setMeasure('oneRm')}>Uppskattat maxlyft</button>
+              <button type="button" className={measure === 'top' ? 'active' : ''} onClick={() => setMeasure('top')}>{t('Tyngsta vikt')}</button>
+              <button type="button" className={measure === 'oneRm' ? 'active' : ''} onClick={() => setMeasure('oneRm')}>{t('Uppskattat maxlyft')}</button>
             </div>
           </div>
           <p className="meta">
-            Personbästa: <b>{kg(exercise.bestWeightKg)}</b>
-            {exercise.bestWeightDate && ` (${shortDate(exercise.bestWeightDate)})`} · uppskattat maxlyft {kg(exercise.bestEstimated1RmKg)}
+            {t('Personbästa:')} <b>{kg(exercise.bestWeightKg)}</b>
+            {exercise.bestWeightDate && ` (${shortDate(exercise.bestWeightDate)})`} · {t('uppskattat maxlyft')} {kg(exercise.bestEstimated1RmKg)}
           </p>
           <LineChart
-            label={`${measure === 'top' ? 'Tyngsta vikt' : 'Uppskattat maxlyft'} i ${exercise.name} per pass`}
+            label={measure === 'top'
+              ? t('Tyngsta vikt i {name} per pass', { name: exercise.name })
+              : t('Uppskattat maxlyft i {name} per pass', { name: exercise.name })}
             points={exercise.history.map((p) => ({
               label: shortDate(p.date),
               value: measure === 'top' ? p.topWeightKg : p.estimated1RmKg,
@@ -63,20 +66,20 @@ export default function Stats() {
                 <>
                   <b>{shortDate(p.date)}</b>
                   <div>{p.repsAtTop} × {kg(p.topWeightKg)}</div>
-                  <div className="muted">Maxlyft ≈ {kg(p.estimated1RmKg)}</div>
+                  <div className="muted">{t('Maxlyft ≈')} {kg(p.estimated1RmKg)}</div>
                 </>
               ),
             }))}
           />
-          <p className="meta">Maxlyftet räknas fram med Epleys formel: vikt × (1 + reps / 30).</p>
+          <p className="meta">{t('Maxlyftet räknas fram med Epleys formel: vikt × (1 + reps / 30).')}</p>
         </div>
       )}
 
       <div className="card">
-        <h3>Volym per vecka</h3>
-        <p className="meta">Set × reps × vikt, senaste {weeks.length} veckorna.</p>
+        <h3>{t('Volym per vecka')}</h3>
+        <p className="meta">{t('Set × reps × vikt, senaste {n} veckorna.', { n: weeks.length })}</p>
         <BarChart
-          label="Volym per vecka i kilo"
+          label={t('Volym per vecka i kilo')}
           points={weeks.map((w) => ({
             label: weekLabel(w),
             value: w.volumeKg,
@@ -86,24 +89,24 @@ export default function Stats() {
       </div>
 
       <div className="card">
-        <h3>Kalorier per vecka</h3>
-        <p className="meta">AI:ns uppskattning där den finns, annars den vanliga.</p>
+        <h3>{t('Kalorier per vecka')}</h3>
+        <p className="meta">{t('AI:ns uppskattning där den finns, annars den vanliga.')}</p>
         <BarChart
-          label="Förbrända kalorier per vecka"
+          label={t('Förbrända kalorier per vecka')}
           points={weeks.map((w) => ({
             label: weekLabel(w),
             value: w.kcal,
-            tooltip: <><b>{weekLabel(w)}</b><div>{w.kcal.toLocaleString('sv-SE')} kcal</div><div className="muted">{passText(w.workouts)}</div></>,
+            tooltip: <><b>{weekLabel(w)}</b><div>{w.kcal.toLocaleString(locale)} kcal</div><div className="muted">{passText(w.workouts)}</div></>,
           }))}
         />
       </div>
 
       {weighted.length > 0 && (
         <div className="card">
-          <h3>Personbästa</h3>
+          <h3>{t('Personbästa')}</h3>
           <table className="records">
             <thead>
-              <tr><th>Övning</th><th>Tyngsta vikt</th><th>Maxlyft ≈</th><th>Pass</th></tr>
+              <tr><th>{t('Övning')}</th><th>{t('Tyngsta vikt')}</th><th>{t('Maxlyft ≈')}</th><th>{t('Pass')}</th></tr>
             </thead>
             <tbody>
               {weighted.map((e) => (
