@@ -20,7 +20,7 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
     public async Task<IEnumerable<WorkoutDto>> List()
     {
         var profile = await GetProfile();
-        var workouts = await db.Workouts.Include(w => w.Exercises)
+        var workouts = await MyWorkouts().Include(w => w.Exercises)
             .OrderByDescending(w => w.Date).ThenByDescending(w => w.Id).ToListAsync();
         return workouts.Select(w => ToDto(w, profile));
     }
@@ -35,7 +35,7 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
     [HttpPost("workouts")]
     public async Task<ActionResult<WorkoutDto>> Create(WorkoutInput input)
     {
-        var workout = new Workout();
+        var workout = new Workout { UserId = User.UserId() };
         Apply(workout, input);
         db.Workouts.Add(workout);
         await db.SaveChangesAsync();
@@ -58,7 +58,7 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
     [HttpDelete("workouts/{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await db.Workouts.Where(w => w.Id == id).ExecuteDeleteAsync();
+        var deleted = await MyWorkouts().Where(w => w.Id == id).ExecuteDeleteAsync();
         return deleted == 0 ? NotFound() : NoContent();
     }
 
@@ -74,7 +74,7 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
     [HttpPost("ai/plan")]
     public async Task<PlanResult> Plan(PlanRequest request)
     {
-        var history = await db.Workouts.Include(w => w.Exercises)
+        var history = await MyWorkouts().Include(w => w.Exercises)
             .OrderByDescending(w => w.Date).Take(20).ToListAsync();
         return await ai.SuggestPlanAsync(await GetProfile(), history, request.Wishes);
     }
@@ -105,10 +105,21 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
         return result;
     }
 
-    private Task<Workout?> Load(int id) =>
-        db.Workouts.Include(w => w.Exercises).FirstOrDefaultAsync(w => w.Id == id);
+    // Bara den inloggade användarens pass syns och kan ändras.
+    private IQueryable<Workout> MyWorkouts()
+    {
+        var userId = User.UserId();
+        return db.Workouts.Where(w => w.UserId == userId);
+    }
 
-    private async Task<UserProfile> GetProfile() => await db.Profiles.FindAsync(1) ?? new UserProfile { Id = 1 };
+    private Task<Workout?> Load(int id) =>
+        MyWorkouts().Include(w => w.Exercises).FirstOrDefaultAsync(w => w.Id == id);
+
+    private async Task<UserProfile> GetProfile()
+    {
+        var userId = User.UserId();
+        return await db.Profiles.FirstOrDefaultAsync(p => p.UserId == userId) ?? new UserProfile { UserId = userId };
+    }
 
     private static List<Exercise> ToExercises(WorkoutInput input) =>
         input.Exercises

@@ -1,8 +1,20 @@
+using System.Text.Json.Serialization;
+
 namespace TrAInr.Api.Models;
+
+public class User
+{
+    public int Id { get; set; }
+    public string Email { get; set; } = "";
+    public string PasswordHash { get; set; } = "";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
 
 public class UserProfile
 {
     public int Id { get; set; }
+    // Null bara för data från tiden före konton. Den första som registrerar sig tar över den.
+    [JsonIgnore] public int? UserId { get; set; }
     public string Name { get; set; } = "";
     public double BodyWeightKg { get; set; } = 75;
     public int HeightCm { get; set; } = 178;
@@ -17,6 +29,7 @@ public class UserProfile
 public class Workout
 {
     public int Id { get; set; }
+    [JsonIgnore] public int? UserId { get; set; }
     public string Name { get; set; } = "";
     public DateOnly Date { get; set; }
     public string Notes { get; set; } = "";

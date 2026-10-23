@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, setUnauthorizedHandler } from './api'
+import { api, setUnauthorizedHandler, type Me } from './api'
 import Login from './components/Login'
 import LogWorkout from './components/LogWorkout'
 import History from './components/History'
@@ -19,11 +19,14 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('log')
   const [aiEnabled, setAiEnabled] = useState(true)
   const [dbError, setDbError] = useState<string | null>(null)
-  const [auth, setAuth] = useState<{ loginRequired: boolean; loggedIn: boolean } | null>(null)
+  const [auth, setAuth] = useState<Me | null>(null)
+
+  const loadMe = () =>
+    api.me().then(setAuth).catch(() => setAuth({ loggedIn: false, email: null, inviteRequired: false }))
 
   useEffect(() => {
-    setUnauthorizedHandler(() => setAuth({ loginRequired: true, loggedIn: false }))
-    api.me().then(setAuth).catch(() => setAuth({ loginRequired: false, loggedIn: true }))
+    setUnauthorizedHandler(() => setAuth((a) => ({ inviteRequired: false, ...a, loggedIn: false, email: null })))
+    loadMe()
   }, [])
 
   useEffect(() => {
@@ -32,11 +35,12 @@ export default function App() {
 
   async function logout() {
     await api.logout()
-    setAuth({ loginRequired: true, loggedIn: false })
+    setTab('log')
+    await loadMe()
   }
 
   if (!auth) return null
-  if (!auth.loggedIn) return <Login onLoggedIn={() => setAuth({ loginRequired: true, loggedIn: true })} />
+  if (!auth.loggedIn) return <Login inviteRequired={auth.inviteRequired} onLoggedIn={loadMe} />
 
   return (
     <>
@@ -50,7 +54,7 @@ export default function App() {
               {t.label}
             </button>
           ))}
-          {auth.loginRequired && <button onClick={logout}>Logga ut</button>}
+          <button onClick={logout}>Logga ut</button>
         </nav>
       </header>
       {dbError && (
@@ -68,7 +72,7 @@ export default function App() {
         {tab === 'log' && <LogWorkout onSaved={() => setTab('history')} />}
         {tab === 'history' && <History />}
         {tab === 'plan' && <Plan />}
-        {tab === 'profile' && <ProfileForm />}
+        {tab === 'profile' && <ProfileForm email={auth.email} />}
       </main>
     </>
   )

@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { api, type Profile } from '../api'
 import { useAsync } from './useAsync'
 
-export default function ProfileForm() {
+export default function ProfileForm({ email }: { email: string | null }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [saved, setSaved] = useState(false)
   const { busy, error, run } = useAsync()
@@ -28,6 +28,7 @@ export default function ProfileForm() {
   return (
     <section>
       <h2>Profil</h2>
+      {email && <p className="muted">Inloggad som {email}</p>}
       <form onSubmit={submit}>
         <div className="row">
           <label>Namn <input value={profile.name} onChange={(e) => set('name', e.target.value)} /></label>

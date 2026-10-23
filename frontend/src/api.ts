@@ -80,7 +80,13 @@ export interface Profile {
   dietaryPreferences: string
 }
 
-// App.tsx visar inloggningen igen om servern svarar 401 (t.ex. om lösenordet har bytts).
+export interface Me {
+  loggedIn: boolean
+  email: string | null
+  inviteRequired: boolean
+}
+
+// App.tsx visar inloggningen igen om servern svarar 401 (t.ex. om kakan har gått ut).
 let onUnauthorized = () => {}
 export function setUnauthorizedHandler(handler: () => void) {
   onUnauthorized = handler
@@ -104,8 +110,10 @@ async function request<T>(path: string, init: { method?: string; body?: unknown 
 }
 
 export const api = {
-  me: () => request<{ loginRequired: boolean; loggedIn: boolean }>('/api/auth/me'),
-  login: (password: string) => request<void>('/api/auth/login', { method: 'POST', body: { password } }),
+  me: () => request<Me>('/api/auth/me'),
+  login: (email: string, password: string) => request<void>('/api/auth/login', { method: 'POST', body: { email, password } }),
+  register: (input: { name: string; email: string; password: string; inviteCode: string }) =>
+    request<void>('/api/auth/register', { method: 'POST', body: input }),
   logout: () => request<void>('/api/auth/logout', { method: 'POST' }),
   status: () => request<{ ai: boolean; provider: string | null; database: string | null }>('/api/status'),
   getProfile: () => request<Profile>('/api/profile'),

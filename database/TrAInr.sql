@@ -106,3 +106,94 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    DROP INDEX [IX_Workouts_Date] ON [Workouts];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    ALTER TABLE [Workouts] ADD [UserId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    ALTER TABLE [Profiles] ADD [UserId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    CREATE TABLE [Users] (
+        [Id] int NOT NULL IDENTITY,
+        [Email] nvarchar(256) NOT NULL,
+        [PasswordHash] nvarchar(200) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        CONSTRAINT [PK_Users] PRIMARY KEY ([Id])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    CREATE INDEX [IX_Workouts_UserId_Date] ON [Workouts] ([UserId], [Date]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_Profiles_UserId] ON [Profiles] ([UserId]) WHERE [UserId] IS NOT NULL');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Users_Email] ON [Users] ([Email]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    ALTER TABLE [Profiles] ADD CONSTRAINT [FK_Profiles_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    ALTER TABLE [Workouts] ADD CONSTRAINT [FK_Workouts_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261023133855_Accounts'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261023133855_Accounts', N'10.0.13');
+END;
+
+COMMIT;
+GO
+
