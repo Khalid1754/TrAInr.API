@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Anthropic.Exceptions;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics;
@@ -6,7 +8,6 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using TrAInr.Api.Controllers;
 using TrAInr.Api.Data;
 using TrAInr.Api.Services;
 
@@ -25,8 +26,8 @@ builder.Services.AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 builder.Services.AddOpenApi();
 
-// Inloggning med ett lösenord. Kakan gäller ett år så att mobilen förblir inloggad.
-builder.Services.AddSingleton<AppPassword>();
+// Inloggning med konto (e-post och lösenord). Kakan gäller ett år så att mobilen förblir inloggad.
+builder.Services.AddSingleton<InviteCode>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(o =>
 {
     o.Cookie.Name = "trainr";
@@ -36,19 +37,21 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     o.SlidingExpiration = true;
     o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
     o.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = 403; return Task.CompletedTask; };
+    // Kakor från tiden med ett gemensamt lösenord saknar användare och gäller inte längre.
     o.Events.OnValidatePrincipal = ctx =>
     {
-        var password = ctx.HttpContext.RequestServices.GetRequiredService<AppPassword>();
-        if (ctx.Principal?.FindFirst(AuthController.FingerprintClaim)?.Value != password.Fingerprint)
+        if (ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier) is null)
             ctx.RejectPrincipal();
         return Task.CompletedTask;
     };
 });
 builder.Services.AddAuthorization();
-// Högst fem inloggningsförsök per minut, så att ingen kan gissa lösenordet.
+// Högst fem inloggnings- och registreringsförsök per minut och IP-adress, så att ingen kan gissa lösenord.
 builder.Services.AddRateLimiter(o =>
 {
-    o.AddFixedWindowLimiter("login", l => { l.PermitLimit = 5; l.Window = TimeSpan.FromMinutes(1); });
+    o.AddPolicy("login", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
     o.OnRejected = (ctx, token) =>
     {
         ctx.HttpContext.Response.StatusCode = 429;
@@ -100,9 +103,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-var controllers = app.MapControllers();
-if (app.Services.GetRequiredService<AppPassword>().Required)
-    controllers.RequireAuthorization();
+app.MapControllers().RequireAuthorization();
 app.MapFallbackToFile("index.html");
 
 app.Run();

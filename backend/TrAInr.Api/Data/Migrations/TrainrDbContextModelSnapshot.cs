@@ -60,6 +60,35 @@ namespace TrAInr.Api.Data.Migrations
                     b.ToTable("Exercises");
                 });
 
+            modelBuilder.Entity("TrAInr.Api.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("TrAInr.Api.Models.UserProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -105,24 +134,16 @@ namespace TrAInr.Api.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Profiles");
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Age = 30,
-                            BodyWeightKg = 75.0,
-                            DaysPerWeek = 3,
-                            DietaryPreferences = "",
-                            Experience = "medel",
-                            Goal = "muskelbygge",
-                            HeightCm = 178,
-                            Name = "",
-                            Sex = "unspecified"
-                        });
+                    b.ToTable("Profiles");
                 });
 
             modelBuilder.Entity("TrAInr.Api.Models.Workout", b =>
@@ -155,9 +176,12 @@ namespace TrAInr.Api.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Date");
+                    b.HasIndex("UserId", "Date");
 
                     b.ToTable("Workouts");
                 });
@@ -169,6 +193,22 @@ namespace TrAInr.Api.Data.Migrations
                         .HasForeignKey("WorkoutId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TrAInr.Api.Models.UserProfile", b =>
+                {
+                    b.HasOne("TrAInr.Api.Models.User", null)
+                        .WithOne()
+                        .HasForeignKey("TrAInr.Api.Models.UserProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("TrAInr.Api.Models.Workout", b =>
+                {
+                    b.HasOne("TrAInr.Api.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("TrAInr.Api.Models.Workout", b =>

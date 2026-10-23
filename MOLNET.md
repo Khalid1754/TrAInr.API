@@ -1,6 +1,6 @@
 # TrAInr i molnet
 
-Så här lägger du TrAInr på internet så att du når den från iPhonen även när datorn är avstängd. Allt är gratis och appen skyddas med ett lösenord som bara du kan.
+Så här lägger du TrAInr på internet så att du når den från iPhonen även när datorn är avstängd. Allt är gratis och appen skyddas med inloggning, där du har ett eget konto.
 
 **Vad du får:** en adress som `https://trainr-khalid.azurewebsites.net` som fungerar var du än är. Varje gång något nytt slås ihop i `main` på GitHub uppdateras appen i molnet av sig själv.
 
@@ -71,7 +71,7 @@ Det tar ungefär 30 minuter första gången. Du gör allt i webbläsaren på dat
    | Name | Value |
    |---|---|
    | `ConnectionStrings__Trainr` | hela texten från Anteckningar (steg 2.6) |
-   | `Auth__Password` | lösenordet du vill logga in i appen med. Välj ett eget, långt lösenord. |
+   | `Auth__InviteCode` | en kod som krävs för att skapa konto, så att främlingar inte kan registrera sig. Hitta på en egen. |
    | `Database__MigrateOnStartup` | `true` (skapar tabellerna i databasen automatiskt) |
    | `GROQ_API_KEY` | din Groq-nyckel (samma som i din `.env`-fil på datorn) |
 
@@ -99,7 +99,7 @@ Det tar ungefär 30 minuter första gången. Du gör allt i webbläsaren på dat
 
 1. På GitHub: fliken **Actions** → **Publicera till Azure** i listan till vänster → **Run workflow** → **Run workflow**.
 2. Vänta tills raden får en grön bock (ca 5 minuter). Blir den röd, klicka på den och skicka en skärmdump till Claude.
-3. Öppna adressen från steg 3.5 i webbläsaren. Första gången tar det upp till en minut, för databasen skapas. Logga in med lösenordet från `Auth__Password`.
+3. Öppna adressen från steg 3.5 i webbläsaren. Första gången tar det upp till en minut, för databasen skapas. Klicka **Skapa konto**, fyll i e-post, ett lösenord och koden från `Auth__InviteCode`.
 
 Därefter sker det av sig själv: varje gång en ändring slås ihop i `main` läggs den nya versionen ut.
 
@@ -109,7 +109,9 @@ Därefter sker det av sig själv: varje gång en ändring slås ihop i `main` l�
 2. Tryck på dela-knappen → **Lägg till på hemskärmen**.
 3. Ta bort den gamla TrAInr-ikonen som pekade på datorn, så att du inte blandar ihop dem.
 
-Du förblir inloggad i ett år. Byter du `Auth__Password` i Azure loggas alla gamla inloggningar ut, t.ex. om du tappar telefonen.
+Du förblir inloggad i ett år.
+
+> **Har du redan `Auth__Password` i Azure?** Det fungerar nu som inbjudningskod, så du behöver inte ändra något. Efter uppdateringen skapar du ett konto med koden. Den som skapar konto först får alla pass som redan finns i databasen.
 
 ---
 
@@ -119,4 +121,4 @@ Du förblir inloggad i ett år. Byter du `Auth__Password` i Azure loggas alla ga
 - **Gränser.** Appen får använda 60 minuter processortid per dag och databasen 100 000 vCore-sekunder per månad. För en person räcker det gott. Tar databasens kvot slut pausas den till nästa månad i stället för att kosta pengar.
 - **Datan på datorn flyttas inte.** Molnet börjar med en tom databas. Vill du ha med dina gamla pass, säg till så hjälper Claude dig flytta dem.
 - **SSMS.** Anslut till `trainr-khalid.database.windows.net` med *SQL Server Authentication*, inloggningen `trainradmin` och databaslösenordet. Byter du nätverk (t.ex. annat wifi) kan du behöva lägga till din nya IP-adress under databasserverns **Networking** igen.
-- **Docker hemma fungerar som förut.** Där behövs ingen inloggning, om du inte sätter `APP_PASSWORD` i `.env`.
+- **Docker hemma.** Även där skapar du ett konto första gången, och dina gamla pass följer med till det. Vill du kräva en kod sätter du `INVITE_CODE` i `.env`.

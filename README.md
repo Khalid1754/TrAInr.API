@@ -52,11 +52,15 @@ Datorn måste vara igång och appen startad för att mobilen ska nå den.
 
 ## Appen i molnet (utan datorn)
 
-Vill du nå appen var du än är, även när datorn är avstängd, kan den ligga gratis i Azure med SQL Server-databas och lösenordsskydd. Följ steg-för-steg-guiden i [MOLNET.md](MOLNET.md).
+Vill du nå appen var du än är, även när datorn är avstängd, kan den ligga gratis i Azure med SQL Server-databas och inloggning. Följ steg-för-steg-guiden i [MOLNET.md](MOLNET.md).
 
-## Inloggning
+## Konton och inloggning
 
-Sätt `Auth:Password` (`Auth__Password` som miljövariabel, `APP_PASSWORD` i `.env` för Docker) så måste man logga in med det lösenordet. Är den tom behövs ingen inloggning, vilket passar när appen bara körs hemma. Inloggningen gäller ett år, och byter du lösenord loggas alla gamla inloggningar ut.
+Varje användare skapar ett konto med e-post och lösenord och ser bara sina egna pass och sin egen profil. Lösenorden sparas aldrig i klartext, utan som hash med ASP.NET Cores `PasswordHasher` (PBKDF2). Inloggningen är en kaka som gäller ett år, så att mobilen förblir inloggad.
+
+- **Dina gamla pass följer med.** Pass och profil från tiden innan konton fanns tillhör den som skapar konto först. Skapa alltså ditt eget konto direkt efter uppdateringen.
+- **Inbjudningskod.** Sätt `Auth:InviteCode` (`Auth__InviteCode` som miljövariabel, `INVITE_CODE` i `.env` för Docker) så måste man ange koden för att skapa konto. Då kan inte främlingar registrera sig och använda dina AI-nycklar. Tom = fri registrering. Är bara det gamla `Auth:Password` satt används det som kod.
+- Högst fem inloggnings- och registreringsförsök per minut och IP-adress.
 
 ## AI-nyckel
 
@@ -126,8 +130,9 @@ dotnet test TrAInr.slnx
 
 | Metod | Sökväg | |
 |---|---|---|
-| GET | `/api/auth/me` | Om inloggning krävs och om du är inloggad |
-| POST | `/api/auth/login` / `/api/auth/logout` | Logga in (`{ "password": "..." }`) / ut |
+| GET | `/api/auth/me` | Om du är inloggad, din e-post och om inbjudningskod krävs |
+| POST | `/api/auth/register` | Skapa konto (`{ "email", "password", "name", "inviteCode" }`) |
+| POST | `/api/auth/login` / `/api/auth/logout` | Logga in (`{ "email": "...", "password": "..." }`) / ut |
 | GET/PUT | `/api/profile` | Läs/uppdatera profil |
 | GET/POST | `/api/workouts` | Lista/skapa pass |
 | GET/PUT/DELETE | `/api/workouts/{id}` | Hämta/ändra/ta bort pass |
@@ -140,6 +145,5 @@ OpenAPI-beskrivningen finns på `/openapi/v1.json` i utvecklingsläge.
 
 ## Nästa steg
 
-- Flera användare (idag finns ett lösenord och en profil med Id 1)
 - Grafer över progression per övning
 - Rådet är allmänt och ersätter inte medicinsk rådgivning

@@ -32,7 +32,7 @@ services:
       Gemini__ThinkingLevel: "${GEMINI_THINKING_LEVEL:-}"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
       Ai__Provider: "${AI_PROVIDER:-}"
-      Auth__Password: "${APP_PASSWORD:-}"
+      Auth__InviteCode: "${INVITE_CODE:-${APP_PASSWORD:-}}"
     ports:
       - "5028:8080"
     depends_on:
