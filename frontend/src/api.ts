@@ -101,6 +101,28 @@ export interface Stats {
   }[]
 }
 
+export interface LibraryExercise {
+  name: string
+  muscle: string
+  category: ExerciseEstimate['category']
+}
+
+export interface RecentExercise {
+  name: string
+  lastDate: string
+  times: number
+  sets: number
+  reps: number
+  weightKg: number
+  durationMin: number | null
+}
+
+export interface ExerciseLibrary {
+  muscles: string[]
+  library: LibraryExercise[]
+  recent: RecentExercise[]
+}
+
 export interface Me {
   loggedIn: boolean
   email: string | null
@@ -139,6 +161,7 @@ export const api = {
   status: () => request<{ ai: boolean; provider: string | null; database: string | null }>('/api/status'),
   getProfile: () => request<Profile>('/api/profile'),
   saveProfile: (p: Profile) => request<Profile>('/api/profile', { method: 'PUT', body: p }),
+  exercises: () => request<ExerciseLibrary>('/api/exercises'),
   stats: () => request<Stats>('/api/stats'),
   listWorkouts: () => request<Workout[]>('/api/workouts'),
   createWorkout: (w: WorkoutInput) => request<Workout>('/api/workouts', { method: 'POST', body: w }),

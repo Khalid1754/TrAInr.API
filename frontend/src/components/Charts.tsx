@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 
 // Små SVG-diagram utan extra bibliotek. En serie per diagram, så rubriken räcker som förklaring.
 // Håll fingret eller musen över en stapel eller punkt för att se värdet.
@@ -50,8 +50,9 @@ function showLabel(i: number, total: number, width: number) {
   return (total - 1 - i) % every === 0
 }
 
-function Frame({ size, ticks, y, points, x, children, active, label }: {
-  size: ReturnType<typeof useWidth>
+function Frame({ chartRef, width: W, ticks, y, points, x, children, active, label }: {
+  chartRef: RefObject<HTMLDivElement | null>
+  width: number
   ticks: number[]
   y: (v: number) => number
   points: ChartPoint[]
@@ -60,9 +61,8 @@ function Frame({ size, ticks, y, points, x, children, active, label }: {
   active: number | null
   label: string
 }) {
-  const W = size.width
   return (
-    <div className="chart" ref={size.ref}>
+    <div className="chart" ref={chartRef}>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
         {ticks.map((t) => (
           <g key={t}>
@@ -85,8 +85,7 @@ function Frame({ size, ticks, y, points, x, children, active, label }: {
 }
 
 export function BarChart({ points, label }: { points: ChartPoint[]; label: string }) {
-  const size = useWidth()
-  const { innerW } = size
+  const { ref, width, innerW } = useWidth()
   const [active, setActive] = useState<number | null>(null)
   const ticks = niceTicks(0, Math.max(...points.map((p) => p.value), 0))
   const top = ticks[ticks.length - 1]
@@ -96,7 +95,7 @@ export function BarChart({ points, label }: { points: ChartPoint[]; label: strin
   const barW = Math.min(24, band - 4)
 
   return (
-    <Frame size={size} ticks={ticks} y={y} x={x} points={points} active={active} label={label}>
+    <Frame chartRef={ref} width={width} ticks={ticks} y={y} x={x} points={points} active={active} label={label}>
       {points.map((p, i) => {
         const h = y(0) - y(p.value)
         const r = Math.min(4, h)
@@ -117,8 +116,7 @@ export function BarChart({ points, label }: { points: ChartPoint[]; label: strin
 }
 
 export function LineChart({ points, label }: { points: ChartPoint[]; label: string }) {
-  const size = useWidth()
-  const { innerW } = size
+  const { ref, width, innerW } = useWidth()
   const [active, setActive] = useState<number | null>(null)
   const values = points.map((p) => p.value)
   const ticks = niceTicks(Math.max(0, Math.min(...values) * 0.9), Math.max(...values))
@@ -131,7 +129,7 @@ export function LineChart({ points, label }: { points: ChartPoint[]; label: stri
   const hitW = points.length > 1 ? step : innerW
 
   return (
-    <Frame size={size} ticks={ticks} y={y} x={x} points={points} active={active} label={label}>
+    <Frame chartRef={ref} width={width} ticks={ticks} y={y} x={x} points={points} active={active} label={label}>
       <path className="line-area" d={`${path} L${x(points.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`} />
       <path className="line" d={path} />
       {active !== null && <line className="crosshair" x1={x(active)} x2={x(active)} y1={PAD.top} y2={y(lo)} />}

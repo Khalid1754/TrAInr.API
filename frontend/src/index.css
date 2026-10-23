@@ -82,3 +82,23 @@ table.records { width: 100%; border-collapse: collapse; font-size: 14px; }
 table.records th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 500; }
 table.records td, table.records th { border-bottom: 1px solid var(--border); padding: 6px 4px; }
 .segmented button:hover:not(.active) { background: none; color: var(--text); }
+
+/* Övningsbiblioteket */
+.picker { border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid; gap: 8px; background: var(--bg); }
+.picker-head { display: flex; gap: 8px; align-items: center; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+button.chip { background: var(--card); color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-weight: 500; white-space: nowrap; }
+button.chip:hover { background: var(--soft); color: var(--text); }
+button.chip.active { background: var(--soft); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.picker-list { list-style: none; margin: 0; padding: 0; max-height: 280px; overflow-y: auto; }
+.picker-list button { width: 100%; display: flex; justify-content: space-between; gap: 8px; background: none; color: var(--text); font-weight: 500; padding: 10px 8px; border-radius: 8px; text-align: left; }
+.picker-list button:hover { background: var(--soft); }
+.picker-list li + li { border-top: 1px solid var(--border); }
+.last-time { display: block; font-size: 12px; margin-top: 2px; }
+
+/* Vilotimern ligger längst ner på skärmen medan man loggar. */
+.rest-timer { position: sticky; bottom: 0; margin: 16px -16px -16px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.rest-timer.done { background: var(--soft); }
+.rest-time { display: flex; gap: 8px; align-items: baseline; }
+.rest-time b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.rest-buttons { display: flex; gap: 6px; flex-wrap: wrap; }

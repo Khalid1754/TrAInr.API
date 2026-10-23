@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, setUnauthorizedHandler, type Me } from './api'
+import { api, setUnauthorizedHandler, type Me, type Workout } from './api'
 import Login from './components/Login'
 import LogWorkout from './components/LogWorkout'
 import History from './components/History'
@@ -19,6 +19,7 @@ type Tab = (typeof tabs)[number]['id']
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('log')
+  const [template, setTemplate] = useState<Workout | null>(null)
   const [aiEnabled, setAiEnabled] = useState(true)
   const [dbError, setDbError] = useState<string | null>(null)
   const [auth, setAuth] = useState<Me | null>(null)
@@ -52,7 +53,7 @@ export default function App() {
         </h1>
         <nav>
           {tabs.map((t) => (
-            <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
+            <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => { setTemplate(null); setTab(t.id) }}>
               {t.label}
             </button>
           ))}
@@ -71,8 +72,8 @@ export default function App() {
         </div>
       )}
       <main>
-        {tab === 'log' && <LogWorkout onSaved={() => setTab('history')} />}
-        {tab === 'history' && <History />}
+        {tab === 'log' && <LogWorkout key={template?.id ?? 'new'} template={template} onSaved={() => { setTemplate(null); setTab('history') }} />}
+        {tab === 'history' && <History onRepeat={(w) => { setTemplate(w); setTab('log') }} />}
         {tab === 'stats' && <Stats />}
         {tab === 'plan' && <Plan />}
         {tab === 'profile' && <ProfileForm email={auth.email} />}

@@ -3,7 +3,7 @@ import { api, type Workout } from '../api'
 import { CaloriesBox, MealBox } from './AiResults'
 import { useAsync } from './useAsync'
 
-export default function History() {
+export default function History({ onRepeat }: { onRepeat: (w: Workout) => void }) {
   const [workouts, setWorkouts] = useState<Workout[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -22,6 +22,7 @@ export default function History() {
         <WorkoutCard
           key={w.id}
           workout={w}
+          onRepeat={() => onRepeat(w)}
           onChange={(updated) => setWorkouts((prev) => prev!.map((x) => (x.id === w.id ? updated : x)))}
           onDelete={() => setWorkouts((prev) => prev!.filter((x) => x.id !== w.id))}
         />
@@ -30,8 +31,9 @@ export default function History() {
   )
 }
 
-function WorkoutCard({ workout: w, onChange, onDelete }: {
+function WorkoutCard({ workout: w, onRepeat, onChange, onDelete }: {
   workout: Workout
+  onRepeat: () => void
   onChange: (w: Workout) => void
   onDelete: () => void
 }) {
@@ -76,6 +78,7 @@ function WorkoutCard({ workout: w, onChange, onDelete }: {
       <div className="actions">
         <button onClick={estimateCalories} disabled={calories.busy}>{calories.busy ? 'Tänker…' : '🔥 AI-kalorier'}</button>
         <button onClick={suggestMeal} disabled={meal.busy}>{meal.busy ? 'Tänker…' : '🥗 Återhämtningsmåltid'}</button>
+        <button className="secondary" onClick={onRepeat}>Kör igen</button>
         <button className="danger" onClick={deleteWorkout} disabled={remove.busy}>Ta bort</button>
       </div>
       {error && <p className="error">{error}</p>}

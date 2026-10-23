@@ -71,6 +71,13 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
         return new EstimateDto(CalorieEstimator.TotalVolumeKg(exercises), CalorieEstimator.EstimateWorkout(exercises, profile.BodyWeightKg));
     }
 
+    [HttpGet("exercises")]
+    public async Task<ExercisesResult> Exercises()
+    {
+        var workouts = await MyWorkouts().Include(w => w.Exercises).AsNoTracking().ToListAsync();
+        return new ExercisesResult(ExerciseLibrary.Muscles, ExerciseLibrary.All, ExerciseLibrary.Recent(workouts));
+    }
+
     [HttpGet("stats")]
     public async Task<StatsResult> Stats([FromQuery] int weeks = 12)
     {
