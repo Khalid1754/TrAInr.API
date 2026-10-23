@@ -25,7 +25,7 @@ public static class CalorieEstimator
 
     private static readonly (ExerciseCategory Category, string[] Keywords)[] Keywords =
     [
-        (ExerciseCategory.Cardio, ["löp", "run", "cykel", "bike", "simning", "swim", "roddmaskin", "rower", "hopprep", "jump rope", "intervall", "hiit"]),
+        (ExerciseCategory.Cardio, ["löp", "run", "cykel", "cykl", "bike", "promenad", "walk", "crosstrainer", "simning", "swim", "roddmaskin", "rower", "hopprep", "jump rope", "intervall", "hiit"]),
         (ExerciseCategory.Bodyweight, ["armhäv", "push-up", "pushup", "chins", "pull-up", "pullup", "dips", "burpee", "plank", "sit-up", "situp"]),
         (ExerciseCategory.Compound, ["knäböj", "squat", "marklyft", "deadlift", "bänk", "bench", "press", "rodd", "row", "utfall", "lunge", "clean", "snatch", "thruster", "hip thrust"]),
     ];

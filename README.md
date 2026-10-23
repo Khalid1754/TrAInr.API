@@ -123,6 +123,8 @@ dotnet test TrAInr.slnx
 
 - **Kalorier i två steg.** `CalorieEstimator` räknar direkt med MET-metoden (kcal = MET × kroppsvikt × tid, där tiden räknas fram ur set, reps och vila, och tung vikt relativt kroppsvikten höjer intensiteten). Den visas medan du loggar. AI:n kan sedan förfina den med intervall och efterförbränning.
 - **Strukturerade AI-svar.** Varje AI-funktion har en C#-typ (`Services/AiModels.cs`) som görs om till ett JSON-schema. AI:n måste svara enligt schemat, så svaren går alltid att visa i gränssnittet.
+- **Snabb loggning.** Övningsbiblioteket (`Services/ExerciseLibrary.cs`) har sök och muskelgrupper och fyller i samma set, reps och vikt som förra gången. Ett tidigare pass kan kopieras, och vilotimern räknar mot en sluttid så att den går rätt även när telefonen är låst.
+- **Statistik.** `Services/Statistics.cs` räknar fram veckovolym, kalorier per vecka, personbästa och uppskattat maxlyft (Epley). Diagrammen är egna SVG-komponenter utan extra bibliotek.
 - **AI-svaren sparas** på passet i databasen så att de finns kvar i historiken. Ändras passet rensas de.
 - **Modell:** `claude-opus-5-5` som standard, ändras under `Ai:Model` i `appsettings.json` (t.ex. `claude-sonnet-5-5` eller `claude-haiku-5-5` för lägre kostnad).
 
@@ -136,6 +138,7 @@ dotnet test TrAInr.slnx
 | GET/PUT | `/api/profile` | Läs/uppdatera profil |
 | GET/POST | `/api/workouts` | Lista/skapa pass |
 | GET/PUT/DELETE | `/api/workouts/{id}` | Hämta/ändra/ta bort pass |
+| GET | `/api/exercises` | Övningsbiblioteket med muskelgrupper och dina senaste övningar med förra gångens värden |
 | GET | `/api/stats` | Statistik: veckovolym, kalorier per vecka, utveckling och personbästa per övning (`?weeks=12`) |
 | POST | `/api/estimate` | Snabb kaloriuppskattning för ett osparat pass |
 | POST | `/api/ai/plan` | AI-veckoschema (`{ "wishes": "..." }`) |
