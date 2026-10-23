@@ -3,7 +3,7 @@ import { api, setUnauthorizedHandler, type Me, type Workout } from './api'
 import Login from './components/Login'
 import LogWorkout from './components/LogWorkout'
 import History from './components/History'
-import Plan from './components/Plan'
+import Coach from './components/Coach'
 import Stats from './components/Stats'
 import ProfileForm from './components/ProfileForm'
 
@@ -11,7 +11,7 @@ const tabs = [
   { id: 'log', label: 'Logga pass' },
   { id: 'history', label: 'Historik' },
   { id: 'stats', label: 'Statistik' },
-  { id: 'plan', label: 'AI-schema' },
+  { id: 'coach', label: 'AI-coach' },
   { id: 'profile', label: 'Profil' },
 ] as const
 
@@ -72,10 +72,10 @@ export default function App() {
         </div>
       )}
       <main>
-        {tab === 'log' && <LogWorkout key={template?.id ?? 'new'} template={template} onSaved={() => { setTemplate(null); setTab('history') }} />}
+        {tab === 'log' && <LogWorkout key={template?.id ?? 'new'} template={template} aiEnabled={aiEnabled} onSaved={() => { setTemplate(null); setTab('history') }} />}
         {tab === 'history' && <History onRepeat={(w) => { setTemplate(w); setTab('log') }} />}
         {tab === 'stats' && <Stats />}
-        {tab === 'plan' && <Plan />}
+        {tab === 'coach' && <Coach aiEnabled={aiEnabled} />}
         {tab === 'profile' && <ProfileForm email={auth.email} />}
       </main>
     </>

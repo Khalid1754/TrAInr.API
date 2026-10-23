@@ -123,6 +123,20 @@ export interface ExerciseLibrary {
   recent: RecentExercise[]
 }
 
+export interface NextExercise {
+  name: string
+  sets: number
+  reps: number
+  weightKg: number
+  durationMin: number | null
+  reason: string
+}
+
+export interface ChatMessage {
+  role: 'user' | 'coach'
+  text: string
+}
+
 export interface Me {
   loggedIn: boolean
   email: string | null
@@ -170,5 +184,8 @@ export const api = {
     request<{ volumeKg: number; estimate: WorkoutEstimate }>('/api/estimate', { method: 'POST', body: w }),
   aiCalories: (id: number) => request<CaloriesResult>(`/api/workouts/${id}/ai/calories`, { method: 'POST' }),
   aiMeal: (id: number) => request<MealResult>(`/api/workouts/${id}/ai/meal`, { method: 'POST' }),
+  next: (exercises: string[], useAi: boolean) =>
+    request<{ source: string; exercises: NextExercise[]; tip: string | null }>('/api/coach/next', { method: 'POST', body: { exercises, useAi } }),
+  chat: (messages: ChatMessage[]) => request<{ reply: string }>('/api/ai/chat', { method: 'POST', body: { messages } }),
   aiPlan: (wishes: string) => request<PlanResult>('/api/ai/plan', { method: 'POST', body: { wishes } }),
 }

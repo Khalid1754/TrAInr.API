@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
+using TrAInr.Api.Dtos;
 using TrAInr.Api.Models;
 
 namespace TrAInr.Api.Services;
@@ -74,6 +75,51 @@ public class TrainerAi(IConfiguration config, IEnumerable<IAiProvider> providers
             Föreslå den ideala återhämtningsmåltiden efter detta pass för bästa möjliga återhämtning,
             anpassad efter användarens mål, kroppsvikt och kostpreferenser. Använd ingredienser som är lätta att hitta i en svensk matbutik.
             """, AiEffort.Low);
+
+    public Task<NextWorkoutResult> SuggestNextAsync(UserProfile profile, IEnumerable<Workout> history, IReadOnlyList<NextExercise> baseline)
+    {
+        var historyText = string.Join("\n\n", history.Take(10).Select(Describe));
+        var rules = string.Join("\n", baseline.Select(e => $"- {e.Name}: {e.Sets} × {e.Reps} @ {e.WeightKg} kg ({e.Reason})"));
+        return AskAsync<NextWorkoutResult>($"""
+            {Describe(profile)}
+
+            Senaste träningspassen (nyast först):
+            {(historyText.Length > 0 ? historyText : "Ingen historik ännu.")}
+
+            Användaren ska göra de här övningarna i dag. Regelbaserade förslag (progressiv överbelastning):
+            {rules}
+
+            Föreslå set, reps och vikt för varje övning i dag, i samma ordning och med samma namn.
+            Utgå från förslagen men justera om historiken, målet eller anteckningarna talar för det
+            (t.ex. trötthet, smärta eller att det gick lätt). Vikter i steg om 0,5, 1, 2,5 eller 5 kg.
+            Sätt durationMin för konditionsövningar och null annars.
+            """, AiEffort.Low);
+    }
+
+    public Task<ChatResult> ChatAsync(UserProfile profile, IEnumerable<Workout> history, StatsResult stats, IReadOnlyList<ChatMessage> messages)
+    {
+        var historyText = string.Join("\n\n", history.Take(15).Select(Describe));
+        var records = string.Join("\n", stats.Exercises.Where(e => e.BestWeightKg > 0).Take(15)
+            .Select(e => $"- {e.Name}: bäst {e.BestWeightKg} kg, maxlyft ≈ {e.BestEstimated1RmKg} kg, {e.Sessions} pass"));
+        var conversation = string.Join("\n\n", messages.Select(m => $"{(m.Role == "user" ? "Användaren" : "Coachen")}: {m.Text}"));
+        return AskAsync<ChatResult>($"""
+            {Describe(profile)}
+
+            Statistik: {stats.Summary.Workouts} pass totalt, {stats.Summary.WorkoutsLast30Days} senaste 30 dagarna,
+            {stats.Summary.WeekStreak} veckor i rad med träning.
+            Personbästa:
+            {(records.Length > 0 ? records : "inga ännu")}
+
+            Senaste träningspassen (nyast först):
+            {(historyText.Length > 0 ? historyText : "Ingen historik ännu.")}
+
+            Samtalet hittills:
+            {conversation}
+
+            Svara på användarens senaste meddelande som deras personliga tränare. Använd siffrorna ovan
+            när det passar. Handlar frågan om skada eller sjukdom, ge allmänna råd och tipsa om vården.
+            """, AiEffort.Low);
+    }
 
     private async Task<T> AskAsync<T>(string prompt, AiEffort effort)
     {
