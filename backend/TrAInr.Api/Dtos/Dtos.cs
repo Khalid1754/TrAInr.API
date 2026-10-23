@@ -31,6 +31,14 @@ public record WorkoutDto(
 
 public record EstimateDto(double VolumeKg, WorkoutEstimate Estimate);
 
+public record NextRequest([Required, MaxLength(30)] List<string> Exercises, bool UseAi);
+
+public record NextDto(string Source, IReadOnlyList<NextExercise> Exercises, string? Tip);
+
+public record ChatMessage([RegularExpression("user|coach")] string Role, [Required, MaxLength(2000)] string Text);
+
+public record ChatRequest([Required, MinLength(1), MaxLength(20)] List<ChatMessage> Messages);
+
 public record PlanRequest([MaxLength(500)] string? Wishes);
 
 public record ProfileInput(

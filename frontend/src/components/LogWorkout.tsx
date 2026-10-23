@@ -11,7 +11,7 @@ const shortDate = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { d
 const copyRows = (w: Workout) => w.exercises.map((e) => ({ ...e }))
 
 // template = ett tidigare pass som ska göras igen (från Historik).
-export default function LogWorkout({ onSaved, template }: { onSaved: () => void; template?: Workout | null }) {
+export default function LogWorkout({ onSaved, template, aiEnabled }: { onSaved: () => void; template?: Workout | null; aiEnabled: boolean }) {
   const [name, setName] = useState(template?.name ?? '')
   const [date, setDate] = useState(today)
   const [notes, setNotes] = useState('')
@@ -20,7 +20,9 @@ export default function LogWorkout({ onSaved, template }: { onSaved: () => void;
   const [library, setLibrary] = useState<ExerciseLibrary | null>(null)
   const [previous, setPrevious] = useState<Workout[]>([])
   const [picking, setPicking] = useState(false)
+  const [advice, setAdvice] = useState<{ source: string; reasons: Map<string, string>; tip: string | null } | null>(null)
   const { busy, error, run } = useAsync()
+  const coach = useAsync()
 
   useEffect(() => {
     api.exercises().then(setLibrary).catch(() => {})
@@ -29,6 +31,19 @@ export default function LogWorkout({ onSaved, template }: { onSaved: () => void;
 
   const recent = new Map((library?.recent ?? []).map((r) => [r.name.toLowerCase(), r]))
   const suggestions = [...new Set([...(library?.recent ?? []).map((r) => r.name), ...(library?.library ?? []).map((e) => e.name)])]
+
+  // Fyller i set, reps och vikt för övningarna i formuläret utifrån förra passen.
+  async function suggest(useAi: boolean) {
+    const names = rows.map((r) => r.name.trim()).filter(Boolean)
+    const result = await coach.run(() => api.next(names, useAi))
+    if (!result) return
+    const byName = new Map(result.exercises.map((e) => [e.name.toLowerCase(), e]))
+    setRows((prev) => prev.map((r) => {
+      const e = byName.get(r.name.trim().toLowerCase())
+      return e ? { ...r, sets: e.sets, reps: e.reps, weightKg: e.weightKg, durationMin: e.durationMin } : r
+    }))
+    setAdvice({ source: result.source, reasons: new Map([...byName].map(([k, e]) => [k, e.reason])), tip: result.tip })
+  }
 
   function copyWorkout(id: string) {
     const w = previous.find((p) => String(p.id) === id)
@@ -103,6 +118,9 @@ export default function LogWorkout({ onSaved, template }: { onSaved: () => void;
                 <td>
                   <input list="exercise-suggestions" value={r.name} placeholder="Bänkpress" required
                     onChange={(e) => updateRow(i, { name: e.target.value })} />
+                  {advice?.reasons.has(r.name.trim().toLowerCase()) && (
+                    <small className="coach-reason">💡 {advice.reasons.get(r.name.trim().toLowerCase())}</small>
+                  )}
                   {recent.has(r.name.trim().toLowerCase()) && (
                     <small className="muted last-time">
                       Förra gången ({shortDate(recent.get(r.name.trim().toLowerCase())!.lastDate)}): {describeLast(recent.get(r.name.trim().toLowerCase())!)}
@@ -135,6 +153,18 @@ export default function LogWorkout({ onSaved, template }: { onSaved: () => void;
             <button type="button" className="secondary" onClick={() => setRows((prev) => [...prev, emptyRow()])}>+ Tom rad</button>
           </div>
         )}
+        {rows.some((r) => r.name.trim()) && (
+          <div className="actions">
+            <button type="button" className="secondary" disabled={coach.busy} onClick={() => suggest(false)}>Föreslå vikter</button>
+            {aiEnabled && (
+              <button type="button" className="secondary" disabled={coach.busy} onClick={() => suggest(true)}>
+                {coach.busy ? 'Tänker…' : '🤖 Fråga AI-coachen'}
+              </button>
+            )}
+          </div>
+        )}
+        {coach.error && <p className="error">{coach.error}</p>}
+        {advice?.tip && <div className="ai-box">🤖 {advice.tip}</div>}
         <label>
           Anteckningar <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Hur kändes passet?" />
         </label>

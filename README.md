@@ -125,6 +125,8 @@ dotnet test TrAInr.slnx
 - **Strukturerade AI-svar.** Varje AI-funktion har en C#-typ (`Services/AiModels.cs`) som görs om till ett JSON-schema. AI:n måste svara enligt schemat, så svaren går alltid att visa i gränssnittet.
 - **Snabb loggning.** Övningsbiblioteket (`Services/ExerciseLibrary.cs`) har sök och muskelgrupper och fyller i samma set, reps och vikt som förra gången. Ett tidigare pass kan kopieras, och vilotimern räknar mot en sluttid så att den går rätt även när telefonen är låst.
 - **Statistik.** `Services/Statistics.cs` räknar fram veckovolym, kalorier per vecka, personbästa och uppskattat maxlyft (Epley). Diagrammen är egna SVG-komponenter utan extra bibliotek.
+- **Nästa vikt.** `Services/Progression.cs` föreslår nästa vikt med progressiv överbelastning: klarade du minst lika mycket som förra gången ökar vikten (5 kg för stora benövningar, 2,5 kg för andra basövningar, 1 kg för små övningar). Blev det färre reps upprepar du vikten, och efter tre pass utan framsteg backar du 10 %. Fungerar utan AI-nyckel. AI-coachen får förslagen som utgångspunkt och kan justera dem utifrån mål och anteckningar.
+- **Chatt med coachen.** Coachen får din profil, dina senaste 15 pass och dina personbästa, så att svaren handlar om din träning.
 - **AI-svaren sparas** på passet i databasen så att de finns kvar i historiken. Ändras passet rensas de.
 - **Modell:** `claude-opus-5-5` som standard, ändras under `Ai:Model` i `appsettings.json` (t.ex. `claude-sonnet-5-5` eller `claude-haiku-5-5` för lägre kostnad).
 
@@ -141,6 +143,8 @@ dotnet test TrAInr.slnx
 | GET | `/api/exercises` | Övningsbiblioteket med muskelgrupper och dina senaste övningar med förra gångens värden |
 | GET | `/api/stats` | Statistik: veckovolym, kalorier per vecka, utveckling och personbästa per övning (`?weeks=12`) |
 | POST | `/api/estimate` | Snabb kaloriuppskattning för ett osparat pass |
+| POST | `/api/coach/next` | Set, reps och vikt för dagens övningar (`{ "exercises": [...], "useAi": false }`). Regler utan AI, AI:n finslipar om `useAi` är `true` |
+| POST | `/api/ai/chat` | Chatta med AI-coachen (`{ "messages": [{ "role": "user", "text": "..." }] }`) |
 | POST | `/api/ai/plan` | AI-veckoschema (`{ "wishes": "..." }`) |
 | POST | `/api/workouts/{id}/ai/calories` | AI-kaloriuppskattning |
 | POST | `/api/workouts/{id}/ai/meal` | AI-återhämtningsmåltid |

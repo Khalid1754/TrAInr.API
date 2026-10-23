@@ -44,3 +44,10 @@ public record MealResult(
 public record Macros(int Kcal, int ProteinG, int CarbsG, int FatG);
 
 public record Ingredient(string Item, string Amount);
+
+public record NextWorkoutResult(
+    List<NextExercise> Exercises,
+    [property: Description("Ett kort tips inför passet, 1–2 meningar")] string Tip);
+
+public record ChatResult(
+    [property: Description("Svaret till användaren. Kort och konkret, högst ca 150 ord, vanlig text utan rubriker")] string Reply);

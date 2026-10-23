@@ -86,6 +86,30 @@ public class WorkoutsController(TrainrDbContext db, TrainerAi ai, DatabaseStatus
         return Statistics.Calculate(workouts, profile.BodyWeightKg, DateOnly.FromDateTime(DateTime.Today), Math.Clamp(weeks, 4, 52));
     }
 
+    // Förslag på set, reps och vikt för dagens övningar. Reglerna fungerar alltid, AI:n kan finslipa dem.
+    [HttpPost("coach/next")]
+    public async Task<NextDto> Next(NextRequest request)
+    {
+        var workouts = await MyWorkouts().Include(w => w.Exercises).AsNoTracking()
+            .OrderByDescending(w => w.Date).ThenByDescending(w => w.Id).ToListAsync();
+        var names = request.Exercises.Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => n.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var rules = names.Select(n => Progression.Suggest(n, workouts)).ToList();
+        if (!request.UseAi || rules.Count == 0) return new NextDto("regler", rules, null);
+
+        var result = await ai.SuggestNextAsync(await GetProfile(), workouts, rules);
+        return new NextDto(ai.ProviderName ?? "AI", Progression.MergeWithRules(result.Exercises, rules), result.Tip);
+    }
+
+    [HttpPost("ai/chat")]
+    public async Task<ChatResult> Chat(ChatRequest request)
+    {
+        var workouts = await MyWorkouts().Include(w => w.Exercises).AsNoTracking()
+            .OrderByDescending(w => w.Date).ThenByDescending(w => w.Id).ToListAsync();
+        var profile = await GetProfile();
+        var stats = Statistics.Calculate(workouts, profile.BodyWeightKg, DateOnly.FromDateTime(DateTime.Today));
+        return await ai.ChatAsync(profile, workouts, stats, request.Messages.TakeLast(12).ToList());
+    }
+
     [HttpPost("ai/plan")]
     public async Task<PlanResult> Plan(PlanRequest request)
     {
